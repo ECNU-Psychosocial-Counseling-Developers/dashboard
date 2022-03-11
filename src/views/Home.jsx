@@ -15,9 +15,9 @@ function Home() {
   }, [user]);
 
   return (
-    <div>
+    <div className="min-h-screen flex bg-gray-100">
       <SideBar />
-      <main>
+      <main className="flex-1">
         <Header />
         <Outlet />
       </main>

@@ -1,7 +1,7 @@
 const defaultState = {
   user: {
     username: '',
-    role: '',
+    role: 'counselor',
   },
 };
 

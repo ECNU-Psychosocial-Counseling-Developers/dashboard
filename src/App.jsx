@@ -4,6 +4,8 @@ import NotFound from './views/NotFound';
 import Register from './views/Register';
 import Login from './views/Login';
 import Home from './views/Home';
+import CounselorDashboard from './views/Counselor/Dashboard';
+import CounselorRecord from './views/Counselor/Record';
 
 function App() {
   const user = useSelector(state => state.user);
@@ -14,7 +16,8 @@ function App() {
         <Route path="/" element={<Home />}>
           {user.role === 'counselor' && (
             <>
-              <Route index element={<div>counselor</div>} />
+              <Route index element={<CounselorDashboard />} />
+              <Route path="record" element={<CounselorRecord />} />
             </>
           )}
           {user.role === 'supervisor' && (
