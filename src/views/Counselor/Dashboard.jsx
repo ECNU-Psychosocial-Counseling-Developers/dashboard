@@ -11,14 +11,41 @@ dayjs.extend(duration);
 
 // duration 以秒为单位
 const tableData = [
-  { key: 0, consumer: '张先生', duration: 1000, date: dayjs().format('YYYY/MM/DD HH:mm:ss'), rate: Math.floor(Math.random() * 5) + 1, comment: '搞得不丑' },
-  { key: 1, consumer: '李先生', duration: 2000, date: dayjs().format('YYYY/MM/DD HH:mm:ss'), rate: Math.floor(Math.random() * 5) + 2, comment: '搞得不丑' },
-  { key: 2, consumer: '王先生', duration: 500, date: dayjs().format('YYYY/MM/DD HH:mm:ss'), rate: Math.floor(Math.random() * 5) + 1, comment: '搞得不丑' },
-  { key: 3, consumer: '刘先生', duration: 10, date: dayjs().format('YYYY/MM/DD HH:mm:ss'), rate: 5, comment: '搞得不丑' },
-]
+  {
+    key: 0,
+    consumer: '张先生',
+    duration: 1000,
+    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
+    rate: Math.floor(Math.random() * 5) + 1,
+    comment: '搞得不丑',
+  },
+  {
+    key: 1,
+    consumer: '李先生',
+    duration: 2000,
+    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
+    rate: Math.floor(Math.random() * 5) + 2,
+    comment: '搞得不丑',
+  },
+  {
+    key: 2,
+    consumer: '王先生',
+    duration: 500,
+    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
+    rate: Math.floor(Math.random() * 5) + 1,
+    comment: '搞得不丑',
+  },
+  {
+    key: 3,
+    consumer: '刘先生',
+    duration: 10,
+    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
+    rate: 5,
+    comment: '搞得不丑',
+  },
+];
 
 function Dashboard() {
-
   const renderConsultInfo = (title, info) => {
     return (
       <div className="flex-1 flex flex-col justify-center items-center border-r last:border-r-0">
@@ -33,12 +60,11 @@ function Dashboard() {
       {/* Top */}
       <div className="flex items-stretch mb-4">
         <div className="flex-1 flex flex-col">
-
           {/* 个人信息 */}
           <div className="mb-4 p-4 flex bg-white space-x-4">
             <img className="w-28 object-cover" src={photoUrl} alt="头像" />
             <div className="flex-1 flex flex-col">
-              <div >
+              <div>
                 <div className="flex space-x-3 items-center">
                   <p className="text-base">咨询师</p>
                   <div className="flex items-center space-x-1 text-green-300 font-bold text-xs">
@@ -51,12 +77,11 @@ function Dashboard() {
                 <div>我的综合评价</div>
                 <Rate disabled defaultValue={3} />
               </div>
-              <button className="px-1 py-1 w-max bg-green-500 text-white text-xs rounded-sm">咨询设置</button>
+              <button className="px-1 py-1 w-max bg-green-500 text-white text-xs rounded-sm">
+                咨询设置
+              </button>
             </div>
-            <div
-              className="w-48 flex flex-col justify-center items-center text-white space-y-1"
-              style={{ background: 'var(--side-bg)' }}
-            >
+            <div className="w-48 flex flex-col justify-center items-center text-white space-y-1 bg-indigo-theme">
               <p className="">累计完成咨询</p>
               <p className="text-3xl">12353</p>
             </div>
@@ -73,10 +98,14 @@ function Dashboard() {
           {/* 日程表组件 */}
           <div>
             <div className="flex items-center space-x-2">
-              <p className="text-lg font-bold text-gray-600">{dayjs().year()} 年 {dayjs().month() + 1} 月</p>
+              <p className="text-lg font-bold text-gray-600">
+                {dayjs().year()} 年 {dayjs().month() + 1} 月
+              </p>
               <CalendarOutlined />
             </div>
-            <p className="text-gray-500 text-xs">本月共 {dayjs().daysInMonth()} 天，需值班 XX 天</p>
+            <p className="text-gray-500 text-xs">
+              本月共 {dayjs().daysInMonth()} 天，需值班 XX 天
+            </p>
           </div>
           <Calendar className="flex-1 mt-4" />
         </div>

@@ -6,7 +6,7 @@ import {
   FileTextOutlined,
   CalendarOutlined,
   ProfileOutlined,
-  TeamOutlined
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useSelector } from 'react-redux';
 
@@ -26,7 +26,7 @@ const userToLink = {
     { label: '求助记录', link: 'help-record', icon: <ProfileOutlined /> },
     { label: '咨询师管理', link: 'counselor-manage', icon: <UserOutlined /> },
     { label: '访客管理', link: 'visitor-manage', icon: <TeamOutlined /> },
-  ]
+  ],
 };
 
 function NavMenu({ user, navigate }) {
@@ -38,7 +38,9 @@ function NavMenu({ user, navigate }) {
           <li key={item.label}>
             <button
               className="flex items-center text-left w-full px-6 py-3 gap-4  hover:bg-gray-700"
-              onClick={() => { navigate(item.link) }}
+              onClick={() => {
+                navigate(item.link);
+              }}
             >
               {item.icon}
               <span>{item.label}</span>
@@ -47,28 +49,36 @@ function NavMenu({ user, navigate }) {
         ))}
       </ul>
     </div>
-  )
+  );
 }
 
-function ChatMenu({ user, navigate }) {
+function ChatMenu({ user, navigate, conversation }) {
   // TODO: 网络获取正在聊天的对象
-  const onlinePerson = [
-    { avatarUrl: 'http://localhost:4000/src/assets/photo.webp', name: '刘亦菲', messageNumber: 0 },
-    { avatarUrl: 'https://placekitten.com/g/200/200', name: '小猫🐱', messageNumber: 2 },
-  ];
+
+  const jumpToConversation = userID => {
+    // TODO: 更改为 base64 形式
+    navigate(`/conversation/${userID}`);
+  };
+
   return (
     <div>
       <p className="px-6 py-4 text-xs">会话列表</p>
       <ul>
-        {onlinePerson.map(person => (
+        {conversation.onlinePeople.map(person => (
           <li key={person.name}>
-            <button className="flex justify-between items-center w-full pl-6 pr-4 py-3 hover:bg-gray-700">
+            <button
+              className="flex justify-between items-center w-full pl-6 pr-4 py-3 hover:bg-gray-700"
+              onClick={() => jumpToConversation(person.userID)}
+            >
               <div className="space-x-4">
                 <Avatar src={person.avatarUrl} />
                 <span className="text-sm">{person.name}</span>
               </div>
-              {person.messageNumber > 0 &&
-                <span className="rounded-full line-height square w-4 bg-red-500 text-xs">{person.messageNumber}</span>}
+              {person.messageNumber > 0 && (
+                <span className="rounded-full line-height square w-4 bg-red-500 text-xs">
+                  {person.messageNumber}
+                </span>
+              )}
             </button>
           </li>
         ))}
@@ -79,17 +89,18 @@ function ChatMenu({ user, navigate }) {
 
 function SideBar() {
   const user = useSelector(state => state.user);
+  const conversation = useSelector(state => state.conversation);
 
   const navigate = useNavigate();
 
   return (
-    <aside className="w-48 text-white" style={{ background: 'var(--side-bg)' }}>
+    <aside className="w-48 flex-shrink-0 text-white bg-indigo-theme">
       <div className="flex justify-center items-center space-x-3 mt-5 mb-6">
         <Avatar size={64} src="https://placekitten.com/g/300/300" />
         <p className="text-gray-50">欢迎，咨询师</p>
       </div>
       <NavMenu user={user} navigate={navigate} />
-      <ChatMenu user={user} navigate={navigate} />
+      <ChatMenu user={user} conversation={conversation} navigate={navigate} />
     </aside>
   );
 }

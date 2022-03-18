@@ -6,6 +6,7 @@ import Login from './views/Login';
 import Home from './views/Home';
 import CounselorDashboard from './views/Counselor/Dashboard';
 import CounselorRecord from './views/Counselor/Record';
+import Conversation from './views/Conversation';
 
 function App() {
   const user = useSelector(state => state.user);
@@ -30,6 +31,7 @@ function App() {
               <Route index element={<div>admin</div>} />
             </>
           )}
+          <Route path="/conversation/:userID" element={<Conversation />} />
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
