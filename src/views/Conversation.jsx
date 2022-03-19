@@ -1,15 +1,59 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { flushSync } from 'react-dom';
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { Avatar, Input } from 'antd';
-import IconDone from '../icons/IconDone';
+import { IconDone, IconEmoji, IconQuestion } from '../icons';
+import { emojiNameUrlMap } from '../utils';
 
 const { TextArea } = Input;
 
+// Demo Messages
 const chatMessage = [
   { userID: '01', text: '你好吗？' },
-  { userID: '02', text: '我很好' },
+  { userID: '02', text: '我很好[啊]\n[滑稽]哈哈' },
 ];
+
+function replaceEmojiTextToUrl(text) {
+  const reg = /\[(.*?)\]/g;
+  const replaceTarget = [];
+  let execResult;
+  while ((execResult = reg.exec(text))) {
+    replaceTarget.push({
+      startIndex: execResult.index,
+      endIndex: execResult.index + execResult[0].length,
+      content: execResult[1],
+    });
+  }
+
+  const renderResult = [];
+  let lastEndIndex = 0;
+  let nextStartIndex = 0;
+  replaceTarget.forEach(({ startIndex, endIndex, content }) => {
+    nextStartIndex = startIndex;
+    const textFrag = text.slice(lastEndIndex, nextStartIndex);
+    if (textFrag) {
+      renderResult.push(textFrag);
+    }
+    const emojiImageUrl = emojiNameUrlMap[content];
+    if (emojiImageUrl) {
+      renderResult.push(
+        <img
+          className="inline-block w-6"
+          key={startIndex}
+          src={emojiImageUrl}
+          alt={`[${content}]`}
+          draggable={false}
+        />
+      );
+    } else {
+      renderResult.push(`[${content}]`);
+    }
+    lastEndIndex = endIndex;
+  });
+  renderResult.push(text.slice(lastEndIndex));
+  return <>{renderResult}</>;
+}
 
 function ChatBubble(props) {
   const { text, isLeft, avatarUrl } = props;
@@ -33,7 +77,7 @@ function ChatBubble(props) {
           className={`inline-block whitespace-pre-wrap p-2 rounded ${colorClass}`}
           style={{ overflowWrap: 'anywhere' }}
         >
-          {text}
+          {replaceEmojiTextToUrl(text)}
         </div>
       </div>
       {!isLeft && avatar}
@@ -48,8 +92,11 @@ export default function Conversation() {
 
   const [messages, setMessages] = useState(chatMessage);
   const [text, setText] = useState('');
+  const [emojiBoxVisible, setEmojiBoxVisible] = useState(false);
 
   const conversationWindowRef = useRef();
+  const emojiBoxRef = useRef();
+  const textareaRef = useRef();
 
   const currentPerson = conversation.onlinePeople.find(
     person => person.userID === userID
@@ -59,19 +106,19 @@ export default function Conversation() {
     if (!text.trim().length) {
       return;
     }
-    setMessages(preMessages => [
-      ...preMessages,
-      {
-        userID: user.userID,
-        text,
-      },
-    ]);
-    setText('');
-    setTimeout(() => {
-      conversationWindowRef.current.scrollTop =
-        conversationWindowRef.current.scrollHeight -
-        conversationWindowRef.current.clientHeight;
-    }, 0);
+    flushSync(() => {
+      setMessages(preMessages => [
+        ...preMessages,
+        {
+          userID: user.userID,
+          text,
+        },
+      ]);
+      setText('');
+    });
+    conversationWindowRef.current.lastChild.scrollIntoView({
+      behavior: 'smooth',
+    });
   };
 
   const handleMessageKeyDown = e => {
@@ -80,6 +127,30 @@ export default function Conversation() {
       handleSendMessage();
     }
   };
+
+  const handleClickEmoji = emoji => {
+    setText(prevText => prevText + emoji);
+    setEmojiBoxVisible(false);
+    textareaRef.current.focus();
+  };
+
+  const clickOutsideEmojiBox = e => {
+    let element = e.target;
+    while (element) {
+      if (element && element === emojiBoxRef.current) {
+        return;
+      }
+      element = element.parentElement;
+    }
+    setEmojiBoxVisible(false);
+  };
+
+  useEffect(() => {
+    window.addEventListener('click', clickOutsideEmojiBox);
+    return () => {
+      window.removeEventListener('click', clickOutsideEmojiBox);
+    };
+  }, []);
 
   return (
     <div
@@ -96,12 +167,15 @@ export default function Conversation() {
           </div>
         </div>
 
-        <div>
-          <button className="px-6 py-1 flex justify-center items-center gap-4 hover:bg-gray-600">
-            <IconDone style={{ fontSize: 30 }} />
+        <div className="space-y-2">
+          <button className="w-full py-1 flex justify-center items-center gap-4 hover:text-gray-300 active:text-gray-500">
+            <IconQuestion style={{ fontSize: 26 }} />
             <span>请求督导</span>
           </button>
-          <button className="flex">结束咨询</button>
+          <button className="w-full py-1 flex justify-center items-center gap-4 hover:text-gray-300 active:text-gray-500">
+            <IconDone style={{ fontSize: 26 }} />
+            <span>结束咨询</span>
+          </button>
         </div>
       </div>
 
@@ -125,8 +199,37 @@ export default function Conversation() {
             />
           ))}
         </div>
-        <div className="h-6 bg-gray-200"></div>
-        <div className="h-32 flex flex-col bg-gray-100 border">
+        <div
+          className="relative flex justify-start px-2 py-1 bg-gray-50 border-t"
+          ref={emojiBoxRef}
+        >
+          <button
+            title="表情"
+            className="text-gray-700 hover:text-gray-500"
+            onClick={() => setEmojiBoxVisible(visible => !visible)}
+          >
+            <IconEmoji style={{ fontSize: 20 }} />
+          </button>
+          <div
+            className="absolute bottom-7 left-0 p-2 grid-cols-10 gap-1 bg-gray-50 border shadow"
+            style={{
+              display: emojiBoxVisible ? 'grid' : 'none',
+            }}
+          >
+            {Object.keys(emojiNameUrlMap).map(key => (
+              <button onClick={() => handleClickEmoji(`[${key}]`)}>
+                <img
+                  className="w-7 hover:bg-gray-200 select-none"
+                  src={emojiNameUrlMap[key]}
+                  alt={key}
+                  title={key}
+                  draggable={false}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="h-32 flex flex-col bg-gray-100 border-b">
           <TextArea
             autoSize
             className="flex-1"
@@ -138,6 +241,7 @@ export default function Conversation() {
             value={text}
             onChange={e => setText(e.target.value)}
             onKeyDown={handleMessageKeyDown}
+            ref={textareaRef}
           />
           <div
             style={{ background: '#f8f8f8' }}

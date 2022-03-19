@@ -10,3 +10,13 @@ pre {
 .ant-popover-inner-content {
   padding: 0;
 }
+
+::-webkit-scrollbar {
+  width: 8px;
+  background: #f9f9f9;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: #e0e0e0;
+}
