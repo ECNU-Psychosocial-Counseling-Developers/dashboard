@@ -15,7 +15,7 @@ function Header() {
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleLogout = () => {
-    // dispatch({ type: 'user/logout' });
+    dispatch({ type: 'user/logout' });
     navigate('/login');
   };
 

@@ -1,119 +1,50 @@
 import { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
 import { Avatar, Input } from 'antd';
-import { IconDone, IconEmoji, IconQuestion } from '../icons';
-import { emojiNameUrlMap } from '../utils';
+import { IconDone, IconEmoji, IconQuestion } from '../../icons';
+import ChatBubble from './ChatBubbles';
+import { emojiNameUrlMap } from '../../utils';
+
+import {
+  createMessage,
+  sendMessage,
+  setMessageRead,
+  getMessageList,
+  getConversationList,
+} from '../../im';
 
 const { TextArea } = Input;
 
-// Demo Messages
-const chatMessage = [
-  { userID: '01', text: '你好吗？' },
-  { userID: '02', text: '我很好[啊]\n[滑稽]哈哈' },
-];
-
-function replaceEmojiTextToUrl(text) {
-  const reg = /\[(.*?)\]/g;
-  const replaceTarget = [];
-  let execResult;
-  while ((execResult = reg.exec(text))) {
-    replaceTarget.push({
-      startIndex: execResult.index,
-      endIndex: execResult.index + execResult[0].length,
-      content: execResult[1],
-    });
-  }
-
-  const renderResult = [];
-  let lastEndIndex = 0;
-  let nextStartIndex = 0;
-  replaceTarget.forEach(({ startIndex, endIndex, content }) => {
-    nextStartIndex = startIndex;
-    const textFrag = text.slice(lastEndIndex, nextStartIndex);
-    if (textFrag) {
-      renderResult.push(textFrag);
-    }
-    const emojiImageUrl = emojiNameUrlMap[content];
-    if (emojiImageUrl) {
-      renderResult.push(
-        <img
-          className="inline-block w-6"
-          key={startIndex}
-          src={emojiImageUrl}
-          alt={`[${content}]`}
-          draggable={false}
-        />
-      );
-    } else {
-      renderResult.push(`[${content}]`);
-    }
-    lastEndIndex = endIndex;
-  });
-  renderResult.push(text.slice(lastEndIndex));
-  return <>{renderResult}</>;
-}
-
-function ChatBubble(props) {
-  const { text, isLeft, avatarUrl } = props;
-  const colorClass = isLeft
-    ? 'bg-white border'
-    : 'bg-green-theme text-gray-100';
-  const avatar = (
-    <Avatar className="flex-shrink-0 select-none" size={36} src={avatarUrl} />
-  );
-
-  return (
-    <div className={`flex gap-4 ${isLeft ? 'justify-start' : 'justify-end'}`}>
-      {isLeft && avatar}
-      <div className="relative">
-        {isLeft ? (
-          <div className="absolute left-0 border-l border-b w-2 h-2 origin-top-left rotate-45 bg-white translate-y-3"></div>
-        ) : (
-          <div className="absolute right-0 w-2 h-2 origin-top-right -rotate-45 bg-green-theme translate-y-3"></div>
-        )}
-        <div
-          className={`inline-block whitespace-pre-wrap p-2 rounded ${colorClass}`}
-          style={{ overflowWrap: 'anywhere' }}
-        >
-          {replaceEmojiTextToUrl(text)}
-        </div>
-      </div>
-      {!isLeft && avatar}
-    </div>
-  );
-}
-
 export default function Conversation() {
   const user = useSelector(state => state.user);
-  const conversation = useSelector(state => state.conversation);
+  const dispatch = useDispatch();
+  const conversationList = useSelector(state => state.conversationList);
+
   const { userID } = useParams();
 
-  const [messages, setMessages] = useState(chatMessage);
+  const conversationID = sessionStorage.getItem('currentConversationID');
+
+  const [messages, setMessages] = useState([]);
   const [text, setText] = useState('');
   const [emojiBoxVisible, setEmojiBoxVisible] = useState(false);
+  const [chatPersonInfo, setChatPersonInfo] = useState(null);
+  const [nextReqMessageID, setNextReqMessageID] = useState('');
 
   const conversationWindowRef = useRef();
   const emojiBoxRef = useRef();
   const textareaRef = useRef();
 
-  const currentPerson = conversation.onlinePeople.find(
-    person => person.userID === userID
-  );
-
   const handleSendMessage = () => {
     if (!text.trim().length) {
       return;
     }
+    const targetUserID = user.userID === '01' ? '02' : '01';
+    const newMessage = createMessage(targetUserID, text);
+    sendMessage(newMessage);
     flushSync(() => {
-      setMessages(preMessages => [
-        ...preMessages,
-        {
-          userID: user.userID,
-          text,
-        },
-      ]);
+      setMessages(preMessages => [...preMessages, newMessage]);
       setText('');
     });
     conversationWindowRef.current.lastChild.scrollIntoView({
@@ -145,12 +76,80 @@ export default function Conversation() {
     setEmojiBoxVisible(false);
   };
 
+  const getMoreMessages = () => {
+    getMessageList({
+      conversationID,
+      nextReqMessageID,
+    }).then(res => {
+      const messageList = res.data.messageList;
+
+      setNextReqMessageID(
+        res.data.isCompleted ? '' : res.data.nextReqMessageID
+      );
+      setMessages(prevMessages => [...messageList, ...prevMessages]);
+    });
+  };
+
   useEffect(() => {
     window.addEventListener('click', clickOutsideEmojiBox);
     return () => {
       window.removeEventListener('click', clickOutsideEmojiBox);
     };
   }, []);
+
+  useEffect(() => {
+    getMessageList({ conversationID }).then(res => {
+      const messageList = res.data.messageList;
+      setNextReqMessageID(
+        res.data.isCompleted ? '' : res.data.nextReqMessageID
+      );
+      setMessages(messageList);
+    });
+
+    // TODO: 通过 userID 获取当前聊天对象的信息
+    const res = {
+      data: {
+        name: '牡丹' + userID,
+        phoneNumber: '133****4322',
+        avatarUrl: 'https://placekitten.com/g/100/100',
+      },
+    };
+    Promise.resolve(res).then(res => {
+      const personInfo = res.data;
+      setChatPersonInfo(personInfo);
+    });
+  }, [userID]);
+
+  useEffect(() => {
+    const currentConversation = conversationList.find(
+      conversation => conversation.conversationID === conversationID
+    );
+    if (currentConversation.unreadCount > 0) {
+      getMessageList({
+        conversationID,
+        count: currentConversation.unreadCount,
+      }).then(res => {
+        const messageList = res.data.messageList;
+        // FIXME: how to 触发 chatItem 变化？
+        setMessageRead({ conversationID })
+          .then(() => {
+            return getConversationList();
+          })
+          .then(res => {
+            dispatch({
+              type: 'conversation/get',
+              payload: res.data.conversationList,
+            });
+          });
+        flushSync(() => {
+          setMessages(prevMessages => [...prevMessages, ...messageList]);
+        });
+        conversationWindowRef.current.lastChild.scrollIntoView({
+          behavior: 'smooth',
+        });
+      });
+    }
+  }, [conversationList]);
 
   return (
     <div
@@ -160,11 +159,15 @@ export default function Conversation() {
       {/* 侧边信息 */}
       <div className="w-48 p-6 flex flex-col justify-between text-gray-50 bg-indigo-theme">
         <div className="flex items-center gap-4">
-          <Avatar src={currentPerson.avatarUrl} size={60} />
-          <div className="space-y-2">
-            <p className="text-base">{currentPerson.name}</p>
-            <p className="text-xs">{currentPerson.phoneNumber}</p>
-          </div>
+          {!!chatPersonInfo && (
+            <>
+              <Avatar src={chatPersonInfo.avatarUrl} size={60} />
+              <div className="space-y-2">
+                <p className="text-base">{chatPersonInfo.name}</p>
+                <p className="text-xs">{chatPersonInfo.phoneNumber}</p>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -186,18 +189,27 @@ export default function Conversation() {
           className="flex-1 p-6 overflow-y-auto space-y-1.5"
           style={{ maxHeight: 500, minWidth: 350 }}
         >
-          {messages.map((message, index) => (
-            <ChatBubble
-              key={index}
-              text={message.text}
-              avatarUrl={
-                message.userID === user.userID
-                  ? user.avatarUrl
-                  : currentPerson.avatarUrl
-              }
-              isLeft={message.userID !== user.userID}
-            />
-          ))}
+          {!!nextReqMessageID && (
+            <div className="text-center mb-3">
+              <button
+                className="text-xs text-blue-400"
+                onClick={getMoreMessages}
+              >
+                加载更多消息
+              </button>
+            </div>
+          )}
+          {messages.map((message, index) => {
+            const isLeft = message.flow === 'in';
+            return (
+              <ChatBubble
+                key={index}
+                text={message.payload.text}
+                avatarUrl={isLeft ? chatPersonInfo?.avatarUrl : user.avatarUrl}
+                isLeft={isLeft}
+              />
+            );
+          })}
         </div>
         <div
           className="relative flex justify-start px-2 py-1 bg-gray-50 border-t"
@@ -216,8 +228,8 @@ export default function Conversation() {
               display: emojiBoxVisible ? 'grid' : 'none',
             }}
           >
-            {Object.keys(emojiNameUrlMap).map(key => (
-              <button onClick={() => handleClickEmoji(`[${key}]`)}>
+            {Object.keys(emojiNameUrlMap).map((key, index) => (
+              <button key={index} onClick={() => handleClickEmoji(`[${key}]`)}>
                 <img
                   className="w-7 hover:bg-gray-200 select-none"
                   src={emojiNameUrlMap[key]}

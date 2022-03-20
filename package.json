@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite --port 4000",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "dev:second-user": "vite --mode second-user --port 4001"
   },
   "dependencies": {
     "@ant-design/icons": "^4.7.0",

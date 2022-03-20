@@ -1,18 +1,44 @@
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import SideBar from '../components/SideBar';
 import Header from '../components/Header';
+import { timState, getConversationList } from '../im';
 
 function Home() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const user = useSelector(state => state.user);
+
+  const updateConversation = () => {
+    getConversationList().then(res => {
+      dispatch({
+        type: 'conversation/get',
+        payload: res.data.conversationList,
+      });
+    });
+  };
+
+  if (!timState.receiveCallback) {
+    timState.receiveCallback = () => {
+      updateConversation();
+    };
+  }
 
   useEffect(() => {
     if (!user.role) {
       navigate('/login');
     }
   }, [user]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (timState.isReady) {
+        clearInterval(timer);
+        updateConversation();
+      }
+    }, 50);
+  }, [user.userID]);
 
   return (
     <div className="min-h-screen flex bg-gray-100">

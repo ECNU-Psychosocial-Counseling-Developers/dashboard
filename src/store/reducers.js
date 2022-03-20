@@ -1,34 +1,17 @@
-import { login } from '../im';
+import { logout } from '../im';
 
 const defaultState = {
   user: {
+    name: '',
     username: '',
-    userID: '01',
+    userID: '',
     role: 'counselor',
     avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
   },
-  conversation: {
-    onlinePeople: [
-      {
-        avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
-        name: '刘亦菲',
-        userID: '02',
-        phoneNumber: '187***3285',
-        messageNumber: 0,
-      },
-      {
-        avatarUrl: 'https://placekitten.com/g/200/200',
-        name: '小猫🐱',
-        userID: '03',
-        phoneNumber: '159***9395',
-        messageNumber: 2,
-      },
-    ],
-  },
+  conversationList: [],
 };
 
 function loginReducer(state, action) {
-  login(action.payload.userID);
   return {
     ...state,
     user: action.payload,
@@ -36,13 +19,25 @@ function loginReducer(state, action) {
 }
 
 function logoutReducer(state, action) {
+  logout();
   return {
     ...state,
     user: {
       username: '',
-      userID: 0,
+      userID: '',
       role: '',
     },
+  };
+}
+
+function receiveMessageReducer(state, action) {
+  return state;
+}
+
+function getConversationListReducer(state, action) {
+  return {
+    ...state,
+    conversationList: action.payload,
   };
 }
 
@@ -52,6 +47,10 @@ function reducer(state = defaultState, action) {
       return loginReducer(state, action);
     case 'user/logout':
       return logoutReducer(state, action);
+    case 'conversation/get':
+      return getConversationListReducer(state, action);
+    case 'conversation/receiveMessage':
+      return receiveMessageReducer(state, action);
     default:
       return state;
   }
