@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { Avatar, Input } from 'antd';
-import { IconDone, IconEmoji, IconQuestion } from '../../icons';
+import { Avatar } from 'antd';
+import { IconDone, IconQuestion } from '../../icons';
 import ChatBubble from './ChatBubbles';
-import { emojiNameUrlMap } from '../../utils';
+import MessageTextArea from './MessageTextArea';
 
 import {
   createMessage,
@@ -14,8 +14,6 @@ import {
   getMessageList,
   getConversationList,
 } from '../../im';
-
-const { TextArea } = Input;
 
 export default function Conversation() {
   const user = useSelector(state => state.user);
@@ -27,16 +25,18 @@ export default function Conversation() {
   const conversationID = sessionStorage.getItem('currentConversationID');
 
   const [messages, setMessages] = useState([]);
-  const [text, setText] = useState('');
-  const [emojiBoxVisible, setEmojiBoxVisible] = useState(false);
   const [chatPersonInfo, setChatPersonInfo] = useState(null);
   const [nextReqMessageID, setNextReqMessageID] = useState('');
 
   const conversationWindowRef = useRef();
-  const emojiBoxRef = useRef();
-  const textareaRef = useRef();
 
-  const handleSendMessage = () => {
+  const scrollMessageBottom = () => {
+    conversationWindowRef.current.lastChild.scrollIntoView({
+      behavior: 'smooth',
+    });
+  };
+
+  const handleSendMessage = (text, setText) => {
     if (!text.trim().length) {
       return;
     }
@@ -47,33 +47,7 @@ export default function Conversation() {
       setMessages(preMessages => [...preMessages, newMessage]);
       setText('');
     });
-    conversationWindowRef.current.lastChild.scrollIntoView({
-      behavior: 'smooth',
-    });
-  };
-
-  const handleMessageKeyDown = e => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleClickEmoji = emoji => {
-    setText(prevText => prevText + emoji);
-    setEmojiBoxVisible(false);
-    textareaRef.current.focus();
-  };
-
-  const clickOutsideEmojiBox = e => {
-    let element = e.target;
-    while (element) {
-      if (element && element === emojiBoxRef.current) {
-        return;
-      }
-      element = element.parentElement;
-    }
-    setEmojiBoxVisible(false);
+    scrollMessageBottom();
   };
 
   const getMoreMessages = () => {
@@ -89,13 +63,6 @@ export default function Conversation() {
       setMessages(prevMessages => [...messageList, ...prevMessages]);
     });
   };
-
-  useEffect(() => {
-    window.addEventListener('click', clickOutsideEmojiBox);
-    return () => {
-      window.removeEventListener('click', clickOutsideEmojiBox);
-    };
-  }, []);
 
   useEffect(() => {
     getMessageList({ conversationID }).then(res => {
@@ -130,7 +97,6 @@ export default function Conversation() {
         count: currentConversation.unreadCount,
       }).then(res => {
         const messageList = res.data.messageList;
-        // FIXME: how to 触发 chatItem 变化？
         setMessageRead({ conversationID })
           .then(() => {
             return getConversationList();
@@ -144,9 +110,7 @@ export default function Conversation() {
         flushSync(() => {
           setMessages(prevMessages => [...prevMessages, ...messageList]);
         });
-        conversationWindowRef.current.lastChild.scrollIntoView({
-          behavior: 'smooth',
-        });
+        scrollMessageBottom();
       });
     }
   }, [conversationList]);
@@ -211,62 +175,9 @@ export default function Conversation() {
             );
           })}
         </div>
-        <div
-          className="relative flex justify-start px-2 py-1 bg-gray-50 border-t"
-          ref={emojiBoxRef}
-        >
-          <button
-            title="表情"
-            className="text-gray-700 hover:text-gray-500"
-            onClick={() => setEmojiBoxVisible(visible => !visible)}
-          >
-            <IconEmoji style={{ fontSize: 20 }} />
-          </button>
-          <div
-            className="absolute bottom-7 left-0 p-2 grid-cols-10 gap-1 bg-gray-50 border shadow"
-            style={{
-              display: emojiBoxVisible ? 'grid' : 'none',
-            }}
-          >
-            {Object.keys(emojiNameUrlMap).map((key, index) => (
-              <button key={index} onClick={() => handleClickEmoji(`[${key}]`)}>
-                <img
-                  className="w-7 hover:bg-gray-200 select-none"
-                  src={emojiNameUrlMap[key]}
-                  alt={key}
-                  title={key}
-                  draggable={false}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="h-32 flex flex-col bg-gray-100 border-b">
-          <TextArea
-            autoSize
-            className="flex-1"
-            style={{
-              border: 'none',
-              boxShadow: 'none',
-              background: '#f8f8f8',
-            }}
-            value={text}
-            onChange={e => setText(e.target.value)}
-            onKeyDown={handleMessageKeyDown}
-            ref={textareaRef}
-          />
-          <div
-            style={{ background: '#f8f8f8' }}
-            className="px-4 py-2 flex justify-end"
-          >
-            <button
-              className="px-4 py-1 rounded-sm text-gray-100 bg-green-theme"
-              onClick={handleSendMessage}
-            >
-              发送
-            </button>
-          </div>
-        </div>
+
+        {/* 信息输入框 */}
+        <MessageTextArea onSendMessage={handleSendMessage} />
       </div>
     </div>
   );
