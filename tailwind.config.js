@@ -15,5 +15,8 @@ module.exports = {
       green: { ...colors.green, theme: '#72d4bb' },
     },
   },
-  plugins: [require('@tailwindcss/aspect-ratio')],
+  plugins: [
+    require('@tailwindcss/aspect-ratio'),
+    require('@tailwindcss/line-clamp'),
+  ],
 };

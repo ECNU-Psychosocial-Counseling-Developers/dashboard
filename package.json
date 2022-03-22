@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/aspect-ratio": "^0.4.0",
+    "@tailwindcss/line-clamp": "^0.3.1",
     "@vitejs/plugin-react": "^1.0.7",
     "autoprefixer": "^10.4.2",
     "body-parser": "^1.19.2",
