@@ -1,13 +1,13 @@
-import { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { Avatar, Rate } from 'antd';
-import { IconDone, IconQuestion } from '../../icons';
+import { Avatar, Rate, Modal, Form, Select, Input } from 'antd';
+import { IconQuestion, IconExport } from '../../icons';
 import ChatBubble from './ChatBubbles';
 import MessageTextArea from './MessageTextArea';
+import CommentModal from './CommentModal';
 import dayjs from 'dayjs';
-
 import {
   createMessage,
   sendMessage,
@@ -15,6 +15,7 @@ import {
   getMessageList,
   getConversationList,
 } from '../../im';
+import { saveFileToFileSystem } from '../../utils';
 
 export default function Conversation() {
   const user = useSelector(state => state.user);
@@ -29,15 +30,17 @@ export default function Conversation() {
   const [chatPersonInfo, setChatPersonInfo] = useState(null);
   const [nextReqMessageID, setNextReqMessageID] = useState('');
   const [consultStatus, setConsultStatus] = useState({
-    isOver: false,
+    isOver: true,
     score: 0,
     startTime: 0,
     duration: 0,
     comment: '',
   });
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
 
   const conversationWindowRef = useRef();
   const durationTimerRef = useRef();
+  const pollingTimerRef = useRef();
 
   const scrollMessageBottom = () => {
     conversationWindowRef.current.lastChild.scrollIntoView({
@@ -57,6 +60,7 @@ export default function Conversation() {
       setText('');
     });
     scrollMessageBottom();
+    // TODO: 上传新的聊天信息（时间、发起人）
   };
 
   const getMoreMessages = () => {
@@ -82,6 +86,59 @@ export default function Conversation() {
     });
   };
 
+  const autoRefreshDuration = interval => {
+    refreshDuration();
+    durationTimerRef.current = setInterval(() => {
+      refreshDuration();
+    }, interval);
+  };
+
+  const pollingIsOver = interval => {
+    pollingTimerRef.current = setInterval(() => {
+      const consultRes = {
+        data: {
+          isOver: false,
+          startTime: 1647883247964,
+          score: 0,
+          comment: `挺好的，聊得很开心。我觉得搞得挺不错的。俗话说“子曰：「學而時習之，不亦說乎？有朋自遠方來，不亦樂乎？人不知而不慍，不亦君子乎？”`,
+        },
+      };
+      Promise.resolve(consultRes).then(res => {
+        const { isOver, startTime, score, comment } = res.data;
+        if (isOver) {
+          clearInterval(durationTimerRef.current);
+          clearInterval(pollingTimerRef.current);
+          setConsultStatus({
+            isOver,
+            startTime,
+            score,
+            comment,
+            duration: Date.now() - startTime,
+          });
+          setCommentModalVisible(true);
+        }
+      });
+    }, interval);
+  };
+
+  const askSupervisor = () => {
+    console.log('咨询督导');
+  };
+
+  const handleExportRecord = () => {
+    // TODO: 网络获取聊天信息、用户评价等信息
+    saveFileToFileSystem('这是一个记录', '咨询记录');
+  };
+
+  const submitComment = values => {
+    console.log('submit comment', values);
+    setCommentModalVisible(false);
+  };
+
+  // 点击会话侧边键时，切换或进入会话窗口：
+  // 1. 获取当前聊天信息（聊天框部分）
+  // 2. 获取用户信息和当前咨询状态（会话框侧边栏）
+  // 3. 轮询判断当前咨询是否结束
   useEffect(() => {
     getMessageList({ conversationID }).then(res => {
       const messageList = res.data.messageList;
@@ -103,7 +160,7 @@ export default function Conversation() {
     const consultRes = {
       data: {
         isOver: false,
-        startTime: 1647925763666,
+        startTime: 1647883247964,
         score: 0,
         comment: `挺好的，聊得很开心。我觉得搞得挺不错的。俗话说“子曰：「學而時習之，不亦說乎？有朋自遠方來，不亦樂乎？人不知而不慍，不亦君子乎？”`,
       },
@@ -117,21 +174,22 @@ export default function Conversation() {
           startTime: startTime,
           score: score,
           comment: comment,
-          duration: 0,
+          duration: Date.now() - startTime,
         });
         if (!isOver) {
-          refreshDuration();
-          durationTimerRef.current = setInterval(() => {
-            refreshDuration();
-          }, 1000);
+          autoRefreshDuration(1000);
+          pollingIsOver(3000);
         }
       })
       .catch(err => console.error(err));
     return () => {
       clearInterval(durationTimerRef.current);
+      clearInterval(pollingIsOver.current);
     };
   }, [userID]);
 
+  // 收到新的消息时会更新全局 conversationList，若当前会话有未读消息则重新获取聊天信息，并标记已读
+  // 标记已读之后重新更新 conversationList，消除侧边栏上的未读计数
   useEffect(() => {
     const currentConversation = conversationList.find(
       conversation => conversation.conversationID === conversationID
@@ -160,9 +218,19 @@ export default function Conversation() {
     }
   }, [conversationList]);
 
+  const SideButton = ({ Icon, onClick, text }) => (
+    <button
+      className="w-full py-1 flex justify-center items-center gap-4 hover:text-gray-300 active:text-gray-500"
+      onClick={onClick}
+    >
+      <Icon style={{ fontSize: 26 }} />
+      <span>{text}</span>
+    </button>
+  );
+
   return (
     <div
-      className="mx-6 my-3 bg-white flex shadow-md"
+      className="relative mx-6 my-3 bg-white flex shadow-md"
       style={{ minHeight: 'calc(100vh - 96px)' }}
     >
       {/* 侧边信息 */}
@@ -211,14 +279,19 @@ export default function Conversation() {
         </div>
 
         <div className="justify-self-end space-y-2">
-          <button className="w-full py-1 flex justify-center items-center gap-4 hover:text-gray-300 active:text-gray-500">
-            <IconQuestion style={{ fontSize: 26 }} />
-            <span>请求督导</span>
-          </button>
-          <button className="w-full py-1 flex justify-center items-center gap-4 hover:text-gray-300 active:text-gray-500">
-            <IconDone style={{ fontSize: 26 }} />
-            <span>结束咨询</span>
-          </button>
+          {consultStatus.isOver ? (
+            <SideButton
+              Icon={IconExport}
+              text="导出记录"
+              onClick={handleExportRecord}
+            />
+          ) : (
+            <SideButton
+              Icon={IconQuestion}
+              text="请求督导"
+              onClick={askSupervisor}
+            />
+          )}
         </div>
       </div>
 
@@ -253,8 +326,18 @@ export default function Conversation() {
         </div>
 
         {/* 信息输入框 */}
-        <MessageTextArea onSendMessage={handleSendMessage} />
+        <MessageTextArea
+          onSendMessage={handleSendMessage}
+          disabled={consultStatus.isOver}
+        />
       </div>
+
+      {/* 结束评价弹窗*/}
+      <CommentModal
+        visible={commentModalVisible}
+        onCancel={() => setCommentModalVisible(false)}
+        onSubmit={submitComment}
+      />
     </div>
   );
 }

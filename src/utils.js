@@ -35,4 +35,23 @@ function debounce(callback, delay) {
   };
 }
 
-export { debounce, emojiNameUrlMap };
+/**
+ * 保存文本为文件
+ */
+async function saveFileToFileSystem(content, suggestedName) {
+  const options = {
+    suggestedName,
+    types: [
+      {
+        description: 'Text Files',
+        accept: { 'text/plain': ['.txt'] },
+      },
+    ],
+  };
+  const fileHandle = await window.showSaveFilePicker(options);
+  const writable = await fileHandle.createWritable();
+  await writable.write(content);
+  await writable.close();
+}
+
+export { debounce, emojiNameUrlMap, saveFileToFileSystem };

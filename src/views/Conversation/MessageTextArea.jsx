@@ -6,7 +6,7 @@ import { IconEmoji } from '../../icons';
 const { TextArea } = Input;
 
 export default function MessageTextArea(props) {
-  const { onSendMessage } = props;
+  const { onSendMessage, disabled } = props;
 
   const [text, setText] = useState('');
   const [emojiBoxVisible, setEmojiBoxVisible] = useState(false);
@@ -86,7 +86,8 @@ export default function MessageTextArea(props) {
             boxShadow: 'none',
             background: '#f8f8f8',
           }}
-          value={text}
+          value={disabled ? '咨询已结束' : text}
+          disabled={disabled}
           onChange={e => setText(e.target.value)}
           onKeyDown={handleMessageKeyDown}
           ref={textareaRef}
