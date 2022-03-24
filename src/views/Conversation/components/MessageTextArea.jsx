@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { emojiNameUrlMap } from '../../utils';
+import { emojiNameUrlMap } from '../../../utils';
 import { Input } from 'antd';
-import { IconEmoji } from '../../icons';
+import { IconEmoji } from '../../../icons';
 
 const { TextArea } = Input;
 

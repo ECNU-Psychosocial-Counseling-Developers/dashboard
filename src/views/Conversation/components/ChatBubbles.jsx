@@ -1,5 +1,5 @@
 import { Avatar } from 'antd';
-import { emojiNameUrlMap } from '../../utils';
+import { emojiNameUrlMap } from '../../../utils';
 
 function replaceEmojiTextToUrl(text) {
   const reg = /\[(.*?)\]/g;

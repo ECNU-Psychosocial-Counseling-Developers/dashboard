@@ -2,33 +2,29 @@ import { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { Avatar, Rate, Modal, Form, Select, Input } from 'antd';
+import { Avatar, Rate } from 'antd';
 import { IconQuestion, IconExport } from '../../icons';
-import ChatBubble from './ChatBubbles';
-import MessageTextArea from './MessageTextArea';
-import CommentModal from './CommentModal';
+import CommentModal from './components/CommentModal';
+import SelectSupervisorModal from './components/SelectSupervisorModal';
+import ConsultConversation from './components/ConsultConversation';
+import AskSupervisorConversation from './components/AskSupervisorConversation';
 import dayjs from 'dayjs';
-import {
-  createMessage,
-  sendMessage,
-  setMessageRead,
-  getMessageList,
-  getConversationList,
-} from '../../im';
+import { setMessageRead, getMessageList, getConversationList } from '../../im';
 import { saveFileToFileSystem } from '../../utils';
 
 export default function Conversation() {
-  const user = useSelector(state => state.user);
   const dispatch = useDispatch();
   const conversationList = useSelector(state => state.conversationList);
 
   const { userID } = useParams();
 
-  const conversationID = sessionStorage.getItem('currentConversationID');
+  const consultConversationID = sessionStorage.getItem('currentConversationID');
+  const supervisorConversationID = localStorage.getItem(consultConversationID);
+  const storageSupervisor = localStorage.getItem(
+    consultConversationID + '_supervisorInfo'
+  );
 
-  const [messages, setMessages] = useState([]);
   const [chatPersonInfo, setChatPersonInfo] = useState(null);
-  const [nextReqMessageID, setNextReqMessageID] = useState('');
   const [consultStatus, setConsultStatus] = useState({
     isOver: true,
     score: 0,
@@ -37,43 +33,30 @@ export default function Conversation() {
     comment: '',
   });
   const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [askStatus, setAskStatus] = useState({
+    asking: !!supervisorConversationID,
+    supervisorInfo: storageSupervisor
+      ? JSON.parse(storageSupervisor)
+      : {
+          name: '',
+          avatarUrl: '',
+        },
+  });
+  const [selectModalVisible, setSelectModalVisible] = useState(false);
 
-  const conversationWindowRef = useRef();
+  const [consultMessages, setConsultMessages] = useState([]);
+  const [consultNextMessageID, setConsultNextMessageID] = useState('');
+  const [supervisorMessages, setSupervisorMessages] = useState([]);
+  const [supervisorNextMessageID, setSupervisorNextMessageID] = useState('');
+
+  const consultConversationRef = useRef();
+  const supervisorConversationRef = useRef();
   const durationTimerRef = useRef();
   const pollingTimerRef = useRef();
 
-  const scrollMessageBottom = () => {
-    conversationWindowRef.current.lastChild.scrollIntoView({
+  const scrollMessageBottom = ref => {
+    ref.current.lastChild.scrollIntoView({
       behavior: 'smooth',
-    });
-  };
-
-  const handleSendMessage = (text, setText) => {
-    if (!text.trim().length) {
-      return;
-    }
-    const targetUserID = user.userID === '01' ? '02' : '01';
-    const newMessage = createMessage(targetUserID, text);
-    sendMessage(newMessage);
-    flushSync(() => {
-      setMessages(preMessages => [...preMessages, newMessage]);
-      setText('');
-    });
-    scrollMessageBottom();
-    // TODO: 上传新的聊天信息（时间、发起人）
-  };
-
-  const getMoreMessages = () => {
-    getMessageList({
-      conversationID,
-      nextReqMessageID,
-    }).then(res => {
-      const messageList = res.data.messageList;
-
-      setNextReqMessageID(
-        res.data.isCompleted ? '' : res.data.nextReqMessageID
-      );
-      setMessages(prevMessages => [...messageList, ...prevMessages]);
     });
   };
 
@@ -108,6 +91,8 @@ export default function Conversation() {
         if (isOver) {
           clearInterval(durationTimerRef.current);
           clearInterval(pollingTimerRef.current);
+          localStorage.removeItem(consultConversationID);
+          localStorage.removeItem(consultConversationID + '_supervisorInfo');
           setConsultStatus({
             isOver,
             startTime,
@@ -121,8 +106,36 @@ export default function Conversation() {
     }, interval);
   };
 
-  const askSupervisor = () => {
-    console.log('咨询督导');
+  const selectSupervisor = () => {
+    setSelectModalVisible(true);
+  };
+
+  const handleAskSuperVisor = val => {
+    console.log('handleAskSuperVisor', val);
+    setSelectModalVisible(false);
+    // TODO: 获取咨询人信息
+    const res = {
+      data: {
+        name: '弗洛伊德',
+        avatarUrl: 'https://placekitten.com/g/50/50',
+        userID: '10',
+      },
+    };
+    Promise.resolve(res).then(res => {
+      const supervisorInfo = res.data;
+      setAskStatus({
+        asking: true,
+        supervisorInfo,
+      });
+      localStorage.setItem(
+        consultConversationID,
+        'C2C' + supervisorInfo.userID
+      );
+      localStorage.setItem(
+        consultConversationID + '_supervisorInfo',
+        JSON.stringify(res.data)
+      );
+    });
   };
 
   const handleExportRecord = () => {
@@ -135,19 +148,67 @@ export default function Conversation() {
     setCommentModalVisible(false);
   };
 
+  const refreshMessage = (conversationID, setMessages, conversationRef) => {
+    const conversation = conversationList.find(
+      conversation => conversation.conversationID === conversationID
+    );
+    if (conversation && conversation.unreadCount > 0) {
+      getMessageList({
+        conversationID,
+        count: conversation.unreadCount,
+      }).then(res => {
+        const messageList = res.data.messageList;
+        setMessageRead({ conversationID })
+          .then(() => {
+            return getConversationList();
+          })
+          .then(res => {
+            dispatch({
+              type: 'conversation/get',
+              payload: res.data.conversationList,
+            });
+          });
+        flushSync(() => {
+          setMessages(prevMessages => [...prevMessages, ...messageList]);
+        });
+        scrollMessageBottom(conversationRef);
+      });
+    }
+  };
+
+  const getInitMessages = (conversationID, setNextMessageID, setMessages) => {
+    getMessageList({ conversationID }).then(res => {
+      const messageList = res.data.messageList;
+      setNextMessageID(res.data.isCompleted ? '' : res.data.nextReqMessageID);
+      setMessages(messageList);
+    });
+  };
+
+  const handleFinishAsk = () => {
+    setAskStatus({
+      asking: false,
+    });
+    localStorage.removeItem(consultConversationID);
+    localStorage.removeItem(consultConversationID + '_supervisorInfo');
+  };
+
   // 点击会话侧边键时，切换或进入会话窗口：
   // 1. 获取当前聊天信息（聊天框部分）
   // 2. 获取用户信息和当前咨询状态（会话框侧边栏）
   // 3. 轮询判断当前咨询是否结束
   useEffect(() => {
-    getMessageList({ conversationID }).then(res => {
-      const messageList = res.data.messageList;
-      setNextReqMessageID(
-        res.data.isCompleted ? '' : res.data.nextReqMessageID
+    getInitMessages(
+      consultConversationID,
+      setConsultNextMessageID,
+      setConsultMessages
+    );
+    if (supervisorConversationID && askStatus.asking) {
+      getInitMessages(
+        supervisorConversationID,
+        setSupervisorNextMessageID,
+        setSupervisorNextMessageID
       );
-      setMessages(messageList);
-    });
-
+    }
     // TODO: 通过 userID 获取当前聊天对象的信息
     const infoRes = {
       data: {
@@ -170,10 +231,10 @@ export default function Conversation() {
         const { isOver, startTime, score, comment } = consultData;
         setChatPersonInfo(infoData);
         setConsultStatus({
-          isOver: isOver,
-          startTime: startTime,
-          score: score,
-          comment: comment,
+          isOver,
+          startTime,
+          score,
+          comment,
           duration: Date.now() - startTime,
         });
         if (!isOver) {
@@ -191,35 +252,23 @@ export default function Conversation() {
   // 收到新的消息时会更新全局 conversationList，若当前会话有未读消息则重新获取聊天信息，并标记已读
   // 标记已读之后重新更新 conversationList，消除侧边栏上的未读计数
   useEffect(() => {
-    const currentConversation = conversationList.find(
-      conversation => conversation.conversationID === conversationID
+    refreshMessage(
+      consultConversationID,
+      setConsultMessages,
+      consultConversationRef
     );
-    if (currentConversation.unreadCount > 0) {
-      getMessageList({
-        conversationID,
-        count: currentConversation.unreadCount,
-      }).then(res => {
-        const messageList = res.data.messageList;
-        setMessageRead({ conversationID })
-          .then(() => {
-            return getConversationList();
-          })
-          .then(res => {
-            dispatch({
-              type: 'conversation/get',
-              payload: res.data.conversationList,
-            });
-          });
-        flushSync(() => {
-          setMessages(prevMessages => [...prevMessages, ...messageList]);
-        });
-        scrollMessageBottom();
-      });
+    if (supervisorConversationID && askStatus.asking) {
+      refreshMessage(
+        supervisorConversationID,
+        setSupervisorMessages,
+        supervisorConversationRef
+      );
     }
   }, [conversationList]);
 
-  const SideButton = ({ Icon, onClick, text }) => (
+  const SideButton = ({ Icon, onClick, text, disabled = false }) => (
     <button
+      style={disabled ? { pointerEvents: 'none' } : undefined}
       className="w-full py-1 flex justify-center items-center gap-4 hover:text-gray-300 active:text-gray-500"
       onClick={onClick}
     >
@@ -289,54 +338,54 @@ export default function Conversation() {
             <SideButton
               Icon={IconQuestion}
               text="请求督导"
-              onClick={askSupervisor}
+              onClick={selectSupervisor}
+              disabled={askStatus.asking}
             />
           )}
         </div>
       </div>
 
-      {/* 会话窗口 */}
-      <div className="flex-1 flex flex-col">
-        <div
-          ref={conversationWindowRef}
-          className="flex-1 p-6 overflow-y-auto space-y-1.5"
-          style={{ maxHeight: 500, minWidth: 350 }}
-        >
-          {!!nextReqMessageID && (
-            <div className="text-center mb-3">
-              <button
-                className="text-xs text-blue-400"
-                onClick={getMoreMessages}
-              >
-                加载更多消息
-              </button>
-            </div>
-          )}
-          {messages.map((message, index) => {
-            const isLeft = message.flow === 'in';
-            return (
-              <ChatBubble
-                key={index}
-                text={message.payload.text}
-                avatarUrl={isLeft ? chatPersonInfo?.avatarUrl : user.avatarUrl}
-                isLeft={isLeft}
-              />
-            );
-          })}
-        </div>
+      {/* 与咨询者的会话窗口 */}
+      <ConsultConversation
+        className="flex-1"
+        conversationRef={consultConversationRef}
+        isOver={consultStatus.isOver}
+        chatPersonInfo={chatPersonInfo}
+        conversationID={consultConversationID}
+        messages={consultMessages}
+        setMessages={setConsultMessages}
+        nextReqMessageID={consultNextMessageID}
+        setNextReqMessageID={setConsultNextMessageID}
+      />
 
-        {/* 信息输入框 */}
-        <MessageTextArea
-          onSendMessage={handleSendMessage}
-          disabled={consultStatus.isOver}
+      {/* 咨询督导的会话窗口 */}
+      {askStatus.asking && (
+        <AskSupervisorConversation
+          className="flex-1"
+          askStatus={askStatus}
+          conversationRef={supervisorConversationRef}
+          isOver={consultStatus.isOver}
+          conversationID={'C2C' + askStatus.supervisorInfo.userID}
+          messages={supervisorMessages}
+          setMessages={setSupervisorMessages}
+          nextReqMessageID={supervisorNextMessageID}
+          setNextReqMessageID={setSupervisorNextMessageID}
+          onFinish={handleFinishAsk}
         />
-      </div>
+      )}
 
       {/* 结束评价弹窗*/}
       <CommentModal
         visible={commentModalVisible}
         onCancel={() => setCommentModalVisible(false)}
         onSubmit={submitComment}
+      />
+
+      {/* 选择咨询师弹窗 */}
+      <SelectSupervisorModal
+        visible={selectModalVisible}
+        onCancel={() => setSelectModalVisible(false)}
+        onSubmit={handleAskSuperVisor}
       />
     </div>
   );
