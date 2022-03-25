@@ -5,7 +5,7 @@ import duration from 'dayjs/plugin/duration';
 import Calendar from '../../components/Calendar';
 import photoUrl from '../../assets/photo.webp';
 
-import RecordTable from './RecordTable';
+import RecordTable from '../../components/RecordTable';
 
 dayjs.extend(duration);
 

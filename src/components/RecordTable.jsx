@@ -36,10 +36,10 @@ const tableColumns = [
     key: 'operation',
     render: (text, record) => (
       <div className="space-x-2">
-        <button className="px-4 py-2 bg-green-300 text-gray-50 text-xs rounded">
+        <button className="px-4 py-2 bg-green-theme text-gray-50 text-xs rounded-sm">
           查看详情
         </button>
-        <button className="px-4 py-2 bg-green-300 text-gray-50 text-xs rounded">
+        <button className="px-4 py-2 bg-green-theme text-gray-50 text-xs rounded-sm">
           导出记录
         </button>
       </div>

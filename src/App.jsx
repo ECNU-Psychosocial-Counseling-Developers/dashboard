@@ -6,10 +6,24 @@ import Login from './views/Login';
 import Home from './views/Home';
 import CounselorDashboard from './views/Counselor/Dashboard';
 import CounselorRecord from './views/Counselor/Record';
-import Conversation from './views/Conversation';
+import CounselorConversation from './views/Conversation/CounselorConversation';
+import SupervisorDashboard from './views/Supervisor/Dashboard';
+import SupervisorConsultRecord from './views/Supervisor/ConsultRecord';
+import SupervisorAskRecord from './views/Supervisor/AskRecord';
+import SupervisorConversation from './views/Conversation/SupervisorConversation';
 
 function App() {
   const user = useSelector(state => state.user);
+
+  const conversation = () => {
+    if (user.role === 'counselor') {
+      return <CounselorConversation />;
+    } else if (user.role === 'supervisor') {
+      return <SupervisorConversation />;
+    } else if (user.role === 'admin') {
+      return <div>null</div>;
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -23,7 +37,12 @@ function App() {
           )}
           {user.role === 'supervisor' && (
             <>
-              <Route index element={<div>supervisor</div>} />
+              <Route index element={<SupervisorDashboard />} />
+              <Route
+                path="consult-record"
+                element={<SupervisorConsultRecord />}
+              />
+              <Route path="ask-record" element={<SupervisorAskRecord />} />
             </>
           )}
           {user.role === 'admin' && (
@@ -31,7 +50,7 @@ function App() {
               <Route index element={<div>admin</div>} />
             </>
           )}
-          <Route path="/conversation/:userID" element={<Conversation />} />
+          <Route path="/conversation/:userID" element={conversation()} />
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />

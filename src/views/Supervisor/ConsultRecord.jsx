@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Form, Input, DatePicker } from 'antd';
-import { debounce } from '../../utils';
-
+import { Input, Form, DatePicker } from 'antd';
 import RecordTable from '../../components/RecordTable';
+import { debounce } from '../../utils';
 import service from '../../service';
 
-export default function Record() {
+export default function ConsultRecord() {
   const [tableData, setTableData] = useState([]);
   const [total, setTotal] = useState(0);
 
@@ -26,7 +25,7 @@ export default function Record() {
 
   const handleSearchFromChange = (_, allValues) => {
     const { name, date } = allValues;
-    console.log(date._d.getTime());
+    console.log(new Date(date._d).getTime());
     getTableData(1, 3, name, date);
   };
 

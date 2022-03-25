@@ -2,10 +2,10 @@ import { logout } from '../im';
 
 const defaultState = {
   user: {
-    name: '',
+    name: '初始姓名',
     username: '',
     userID: '',
-    role: 'counselor',
+    role: 'supervisor',
     avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
   },
   conversationList: [],

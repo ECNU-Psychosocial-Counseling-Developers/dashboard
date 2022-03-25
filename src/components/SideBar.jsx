@@ -9,6 +9,7 @@ import {
   ProfileOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
+import { IconShakeHand } from '../icons';
 import { useSelector } from 'react-redux';
 import { IconCross } from '../icons';
 import { setMessageRead, deleteConversation } from '../im';
@@ -20,7 +21,8 @@ const userToLink = {
   ],
   supervisor: [
     { label: '首页', link: '', icon: <HomeOutlined /> },
-    { label: '会话记录', link: 'record', icon: <FileTextOutlined /> },
+    { label: '咨询记录', link: 'consult-record', icon: <FileTextOutlined /> },
+    { label: '求助记录', link: 'ask-record', icon: <IconShakeHand /> },
   ],
   admin: [
     { label: '首页', link: '', icon: <HomeOutlined /> },
