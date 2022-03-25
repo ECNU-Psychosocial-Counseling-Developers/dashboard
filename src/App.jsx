@@ -11,6 +11,7 @@ import SupervisorDashboard from './views/Supervisor/Dashboard';
 import SupervisorConsultRecord from './views/Supervisor/ConsultRecord';
 import SupervisorAskRecord from './views/Supervisor/AskRecord';
 import SupervisorConversation from './views/Conversation/SupervisorConversation';
+import AdminDashboard from './views/Admin/Dashboard';
 
 function App() {
   const user = useSelector(state => state.user);
@@ -47,7 +48,7 @@ function App() {
           )}
           {user.role === 'admin' && (
             <>
-              <Route index element={<div>admin</div>} />
+              <Route index element={<AdminDashboard />} />
             </>
           )}
           <Route path="/conversation/:userID" element={conversation()} />

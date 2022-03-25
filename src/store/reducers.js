@@ -5,7 +5,7 @@ const defaultState = {
     name: '初始姓名',
     username: '',
     userID: '',
-    role: 'supervisor',
+    role: 'admin',
     avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
   },
   conversationList: [],
