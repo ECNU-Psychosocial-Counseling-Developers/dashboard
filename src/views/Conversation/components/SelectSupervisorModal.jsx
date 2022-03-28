@@ -64,7 +64,8 @@ export default function SelectSupervisorModal(props) {
             ),
           }))}
           onChange={val => setValue(val)}
-          activeClassName="text-gray-50 bg-green-theme"
+          checkedClassName="block rounded cursor-pointer text-gray-50 bg-green-theme"
+          unCheckedClassName="block rounded cursor-pointer"
         />
         <div className="flex justify-end gap-3 mt-4">
           <button

@@ -250,6 +250,7 @@ export default function Dashboard() {
           <div className="space-y-1">
             {consultOrderData.map((consult, index) => (
               <ConsultInfoItem
+                key={index}
                 order={index + 1}
                 avatarUrl="https://placekitten.com/35/35"
                 name={consult.name}
@@ -263,6 +264,7 @@ export default function Dashboard() {
           <div className="space-y-1">
             {consultOrderData.map((consult, index) => (
               <ConsultInfoItem
+                key={index}
                 order={index + 1}
                 avatarUrl="https://placekitten.com/35/35"
                 name={consult.name}

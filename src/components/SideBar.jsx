@@ -28,22 +28,30 @@ const userToLink = {
     { label: '首页', link: '', icon: <HomeOutlined /> },
     { label: '咨询记录', link: 'consult-record', icon: <FileTextOutlined /> },
     { label: '排班表', link: 'calendar', icon: <CalendarOutlined /> },
-    { label: '求助记录', link: 'help-record', icon: <ProfileOutlined /> },
     { label: '咨询师管理', link: 'counselor-manage', icon: <UserOutlined /> },
-    { label: '访客管理', link: 'visitor-manage', icon: <TeamOutlined /> },
+    { label: '督导管理', link: 'supervisor-manage', icon: <ProfileOutlined /> },
+    { label: '用户管理', link: 'user-manage', icon: <TeamOutlined /> },
   ],
 };
 
 function NavMenu({ user, navigate }) {
   const menuItems = userToLink[user.role];
+  const [activeLink, setActiveLink] = useState(menuItems[0].link);
+
+  const activeClassName = 'bg-gray-600';
+
   return (
     <div>
       <ul>
         {menuItems.map(item => (
           <li key={item.label}>
             <button
-              className="flex items-center text-left w-full px-6 py-3 gap-4  hover:bg-gray-700"
+              className={
+                'flex items-center text-left w-full px-6 py-3 gap-4  hover:bg-gray-700' +
+                (activeLink === item.link ? ' ' + activeClassName : '')
+              }
               onClick={() => {
+                setActiveLink(item.link);
                 navigate(item.link);
               }}
             >
@@ -184,7 +192,7 @@ function SideBar() {
         <p className="text-gray-50">欢迎，{user.name}</p>
       </div>
       <NavMenu user={user} navigate={navigate} />
-      <ChatMenu navigate={navigate} />
+      {user.role !== 'admin' && <ChatMenu navigate={navigate} />}
     </aside>
   );
 }

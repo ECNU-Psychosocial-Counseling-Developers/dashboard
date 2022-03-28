@@ -54,4 +54,48 @@ async function saveFileToFileSystem(content, suggestedName) {
   await writable.close();
 }
 
-export { debounce, emojiNameUrlMap, saveFileToFileSystem };
+/**
+ * 计算时长并以 HH:mm:ss 的格式返回
+ */
+function duration(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  return `${h}:${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
+}
+
+/**
+ * 以 0.5 为精度四舍五入
+ */
+function roundSemi(number) {
+  const left = Math.floor(number);
+  const right = Math.ceil(number);
+  const mid = left + 0.5;
+  if (number >= mid) {
+    return number - mid < right - number ? mid : right;
+  } else {
+    return mid - number > number - mid ? left : mid;
+  }
+}
+
+/**
+ * 数字映射为星期文字
+ */
+const weekNumberToCharacter = {
+  1: '一',
+  2: '二',
+  3: '三',
+  4: '四',
+  5: '五',
+  6: '六',
+  7: '日',
+};
+
+export {
+  debounce,
+  emojiNameUrlMap,
+  saveFileToFileSystem,
+  duration,
+  roundSemi,
+  weekNumberToCharacter,
+};

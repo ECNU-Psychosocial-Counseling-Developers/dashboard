@@ -5,6 +5,7 @@ import IconQuestion from './IconQuestion';
 import IconCross from './IconCross';
 import IconExport from './IconExport';
 import IconShakeHand from './IconShakeHand';
+import IconCalendarEdit from './IconCalendarEdit';
 
 export {
   IconDone,
@@ -14,4 +15,5 @@ export {
   IconCross,
   IconExport,
   IconShakeHand,
+  IconCalendarEdit,
 };

@@ -12,6 +12,11 @@ import SupervisorConsultRecord from './views/Supervisor/ConsultRecord';
 import SupervisorAskRecord from './views/Supervisor/AskRecord';
 import SupervisorConversation from './views/Conversation/SupervisorConversation';
 import AdminDashboard from './views/Admin/Dashboard';
+import AdminConsultRecord from './views/Admin/ConsultRecord';
+import AdminCalendar from './views/Admin/Calendar';
+import AdminSupervisorManage from './views/Admin/SupervisorManage';
+import AdminCounselorManage from './views/Admin/CounselorManage';
+import AdminUserManage from './views/Admin/UserManage';
 
 function App() {
   const user = useSelector(state => state.user);
@@ -49,9 +54,22 @@ function App() {
           {user.role === 'admin' && (
             <>
               <Route index element={<AdminDashboard />} />
+              <Route path="consult-record" element={<AdminConsultRecord />} />
+              <Route path="calendar" element={<AdminCalendar />} />
+              <Route
+                path="counselor-manage"
+                element={<AdminCounselorManage />}
+              />
+              <Route
+                path="supervisor-manage"
+                element={<AdminSupervisorManage />}
+              />
+              <Route path="user-manage" element={<AdminUserManage />} />
             </>
           )}
-          <Route path="/conversation/:userID" element={conversation()} />
+          {user.role !== 'admin' && (
+            <Route path="/conversation/:userID" element={conversation()} />
+          )}
         </Route>
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />

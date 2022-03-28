@@ -1,5 +1,6 @@
 import { Table, Rate } from 'antd';
 import dayjs from 'dayjs';
+import { duration } from '../utils';
 
 const tableColumns = [
   {
@@ -11,7 +12,7 @@ const tableColumns = [
     title: '咨询时长',
     dataIndex: 'duration',
     key: 'duration',
-    render: text => dayjs.duration(text * 10 ** 3).format('HH:mm:ss'),
+    render: text => duration(text),
   },
   {
     title: '咨询日期',
