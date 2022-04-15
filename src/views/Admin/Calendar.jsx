@@ -1,25 +1,15 @@
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
-import { Avatar, Modal, Input } from 'antd';
+import { Avatar, Modal, Input, message } from 'antd';
 import { IconCalendarEdit } from '../../icons';
 import AddPersonModal from './components/AddPersonModal';
 import { weekNumberToCharacter } from '../../utils';
-
-const consultData = Array.from({ length: 20 }, (_, index) => ({
-  name: '咨询师' + (index + 1),
-  avatarUrl: 'https://placekitten.com/35/35',
-  userID: index,
-}));
-
-const supervisorData = Array.from({ length: 20 }, (_, index) => ({
-  name: '督导' + (index + 1),
-  avatarUrl: 'https://placekitten.com/35/35',
-  userID: index,
-}));
+import service from '../../service';
+import { Role } from '../../enum';
 
 const weekText = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
-function CalendarItem({ className, date, active, onClick }) {
+function CalendarItem({ className, date, active, onClick, count }) {
   const isLegalDate = date > 0;
   return (
     <div
@@ -42,8 +32,8 @@ function CalendarItem({ className, date, active, onClick }) {
             {date}
           </div>
           <div>
-            <p>咨询师 18</p>
-            <p>督导 2</p>
+            <p>咨询师 {count.counselorCount}</p>
+            <p>督导 {count.supervisorCount}</p>
           </div>
         </>
       )}
@@ -59,31 +49,59 @@ export default function Calendar() {
     dateGrid[i] = date++;
   }
 
-  const [activeDate, setActiveDate] = useState(0);
+  const [activeDate, setActiveDate] = useState(new Date().getDate());
   const [tabStatus, setTabStatus] = useState({
     key: 'counselor',
     barWidth: '32px',
     barLeft: '32px',
   });
   const [peopleList, setPeopleList] = useState({
-    consult: [],
+    counselor: [],
     supervisor: [],
   });
   const [addPersonModalVisible, setAddPersonModalVisible] = useState(false);
 
+  // 0: Monday, 1: Tuesday, ..., 6: Sunday
+  const [dutyDayInfoList, setDutyDayInfoList] = useState(
+    Array.from({ length: 7 }, () => ({
+      counselorCount: 0,
+      supervisorCount: 0,
+    }))
+  );
+
   const handleClickOutCalendar = e => {
     let element = e.target;
     while (element) {
-      if (element.classList.contains('calendar-container')) {
+      if (
+        element.classList.contains('calendar-container') ||
+        element.classList.contains('calendar-sidebar') ||
+        element.classList.contains('ant-modal-root') ||
+        element.classList.contains('ant-select-dropdown')
+      ) {
         return;
       }
       element = element.parentElement;
     }
-    setActiveDate(0);
+    setActiveDate(new Date().getDate());
   };
 
+  // 点击某一日期框，在侧边栏显示该日期的值班人员
   const handleClickDate = date => {
+    if (date < 1) {
+      return;
+    }
     setActiveDate(date);
+    const dutyDay =
+      dayjs().date(date).day() === 0 ? 7 : dayjs().date(date).day();
+    Promise.all([
+      service.getOnDutyCounselor(dutyDay),
+      service.getOnDutySupervisor(dutyDay),
+    ]).then(([counselorRes, supervisorRes]) => {
+      setPeopleList({
+        counselor: counselorRes.data.data.counselorList,
+        supervisor: supervisorRes.data.data.counselorList,
+      });
+    });
   };
 
   const handleClickTabButton = key => {
@@ -94,14 +112,77 @@ export default function Calendar() {
     });
   };
 
-  const handleAddPerson = userID => {
-    console.log('new userID', userID);
+  const updateCalendar = () => {
+    service.getAllArrangement().then(res => {
+      const { arrangementList } = res.data.data;
+      const dutyStateInWeek = Array.from({ length: 7 }, () => ({
+        counselorCount: 0,
+        supervisorCount: 0,
+      }));
+      arrangementList.forEach(({ dutyDay, role }) => {
+        if (role === Role.counselor) {
+          dutyStateInWeek[dutyDay - 1].counselorCount++;
+        } else {
+          dutyStateInWeek[dutyDay - 1].supervisorCount++;
+        }
+      });
+      setDutyDayInfoList(dutyStateInWeek);
+    });
   };
 
-  const handleDeletePerson = person => {
+  const updateSidebar = () => {
+    const dutyDay = dayjs().day() === 0 ? 7 : dayjs().day();
+    Promise.all([
+      service.getOnDutyCounselor(dutyDay),
+      service.getOnDutySupervisor(dutyDay),
+    ]).then(([counselorRes, supervisorRes]) => {
+      setPeopleList({
+        counselor: counselorRes.data.data.counselorList,
+        supervisor: supervisorRes.data.data.counselorList,
+      });
+    });
+  };
+
+  const handleAddPerson = payload => {
+    const { counselorId, dutyDay, role, startTime, endTime } = payload;
+    return service
+      .createArrangement(counselorId, dutyDay, role, startTime, endTime)
+      .then(res => {
+        if (res.data.code !== 200) {
+          message.error('添加失败');
+        }
+        message.success('添加成功');
+        updateCalendar();
+        setAddPersonModalVisible(false);
+      });
+  };
+
+  const handleDeletePerson = (person, date) => {
+    const dutyDay = dayjs().date(date).day();
     // TODO: http delete person, update peopleList
-    const service = () => {
-      console.log('delete', person.userID);
+    const deleteArrangement = () => {
+      console.log('delete', person);
+      service.deleteArrangement(dutyDay, person.id).then(res => {
+        if (res.data.code !== 200) {
+          message.error('删除失败');
+          return;
+        }
+        message.success('删除成功');
+        setPeopleList(prevPeopleList => {
+          const newPeopleList = { ...prevPeopleList };
+          if (person.role === Role.counselor) {
+            newPeopleList.counselor = prevPeopleList.counselor.filter(
+              item => item.id !== person.id
+            );
+          } else {
+            newPeopleList.supervisor = prevPeopleList.supervisor.filter(
+              item => item.id !== person.id
+            );
+          }
+          return newPeopleList;
+        });
+        updateCalendar();
+      });
     };
     const modal = Modal.confirm({
       title: '删除',
@@ -109,7 +190,7 @@ export default function Calendar() {
         <p>
           确认删除
           <span className="inline-block font-bold mx-1">
-            {person.name}（UserID: {person.userID}）
+            {person.name}（UserID: {person.id}）
           </span>
           吗？
         </p>
@@ -117,7 +198,7 @@ export default function Calendar() {
       okText: '确认',
       cancelText: '取消',
       onOk: () => {
-        service();
+        deleteArrangement();
         modal.destroy();
       },
       onCancel: () => modal.destroy(),
@@ -125,6 +206,9 @@ export default function Calendar() {
   };
 
   useEffect(() => {
+    updateCalendar();
+    updateSidebar();
+
     window.addEventListener('click', handleClickOutCalendar);
     return () => {
       window.removeEventListener('click', handleClickOutCalendar);
@@ -133,6 +217,7 @@ export default function Calendar() {
 
   return (
     <div className="flex m-4 bg-white" style={{ height: 'calc(100vh - 96px)' }}>
+      {/* 日历 */}
       <div className="flex-1 flex flex-col px-8 py-6 overflow-auto">
         <h2 className="flex items-center gap-2 text-2xl text-indigo-theme">
           {dayjs().format('YYYY年MM月')}
@@ -159,17 +244,20 @@ export default function Calendar() {
                 date={date}
                 className={(index + 1) % 7 ? 'border-r' : ''}
                 active={activeDate === date}
+                count={dutyDayInfoList[index % 7]}
                 onClick={() => handleClickDate(date)}
               />
             ))}
           </div>
         </div>
       </div>
-      <div className="flex flex-col w-48 border-l">
+
+      {/* 侧边栏 */}
+      <div className="calendar-sidebar flex flex-col w-48 border-l">
         <div className="flex justify-center items-center py-4 text-lg">
-          {`${dayjs().format('M月D日')} 星期${
-            weekNumberToCharacter[dayjs().day()]
-          }`}
+          {dayjs(new Date().setDate(activeDate))
+            .format('M月D日 星期d')
+            .replace(/星期(\d)/, (_, p1) => '星期' + weekNumberToCharacter[p1])}
         </div>
         <div className="relative flex border-t border-b">
           <button
@@ -210,18 +298,18 @@ export default function Calendar() {
             }}
           >
             <ul className="flex-shrink-0 w-48 mb-0">
-              {consultData.map((consult, index) => (
+              {peopleList.counselor?.map(counselor => (
                 <li
-                  key={index}
+                  key={counselor.id}
                   className="flex items-center justify-between px-4 py-2 border-b"
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar src={consult.avatarUrl} size={30} />
-                    <span className="text-xs">{consult.name}</span>
+                    <Avatar src={counselor.photo} size={30} />
+                    <span className="text-xs">{counselor.name}</span>
                   </div>
                   <button
                     className="text-xs text-red-700"
-                    onClick={() => handleDeletePerson(consult)}
+                    onClick={() => handleDeletePerson(counselor, activeDate)}
                   >
                     移除
                   </button>
@@ -229,18 +317,18 @@ export default function Calendar() {
               ))}
             </ul>
             <ul className="flex-shrink-0 w-48 mb-0">
-              {supervisorData.map((supervisor, index) => (
+              {peopleList.supervisor?.map(supervisor => (
                 <li
-                  key={index}
+                  key={supervisor.id}
                   className="flex items-center justify-between px-4 py-2 border-b"
                 >
                   <div className="flex items-center gap-4">
-                    <Avatar src={supervisor.avatarUrl} size={30} />
+                    <Avatar src={supervisor.photo} size={30} />
                     <span className="text-xs">{supervisor.name}</span>
                   </div>
                   <button
                     className="text-xs text-red-700"
-                    onClick={() => handleDeletePerson(supervisor)}
+                    onClick={() => handleDeletePerson(supervisor, activeDate)}
                   >
                     移除
                   </button>
@@ -254,6 +342,7 @@ export default function Calendar() {
       {/* 添加咨询师/督导 Modal */}
       <AddPersonModal
         visible={addPersonModalVisible}
+        date={activeDate}
         type={tabStatus.key}
         onFinish={handleAddPerson}
         onCancel={() => setAddPersonModalVisible(false)}

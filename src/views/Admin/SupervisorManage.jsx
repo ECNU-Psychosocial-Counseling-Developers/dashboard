@@ -31,7 +31,7 @@ export default function CounselorManage() {
   useEffect(() => {
     // TODO: 网络获取数据
     setTableData(
-      Array.from({ length: 100 }, (_, index) => ({
+      Array.from({ length: 10 }, (_, index) => ({
         name: `督导 ${index}`,
         role: '督导',
         boundCounselor: ['咨询师 1', '咨询师 2'],
@@ -130,7 +130,7 @@ export default function CounselorManage() {
           size: 'default',
           defaultCurrent: 1,
           total: 100,
-          defaultPageSize: 15,
+          defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
         }}

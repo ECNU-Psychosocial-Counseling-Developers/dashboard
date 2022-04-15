@@ -1,59 +1,67 @@
+import { useState, useEffect } from 'react';
 import { Rate } from 'antd';
 import { CalendarOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import duration from 'dayjs/plugin/duration';
 import Calendar from '../../components/Calendar';
 import photoUrl from '../../assets/photo.webp';
-
 import RecordTable from '../../components/RecordTable';
+import service from '../../service';
+import { useSelector } from 'react-redux';
+import {
+  consultResponseToTableRow,
+  arrangementResponseToDutyList,
+  getMonthTotalDutyDay,
+  roundSemi,
+  duration,
+} from '../../utils';
 
-dayjs.extend(duration);
-
-// duration 以秒为单位
-const tableData = [
-  {
-    key: 0,
-    consumer: '张先生',
-    duration: 1000,
-    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
-    rate: Math.floor(Math.random() * 5) + 1,
-    comment: '搞得不丑',
-  },
-  {
-    key: 1,
-    consumer: '李先生',
-    duration: 2000,
-    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
-    rate: Math.floor(Math.random() * 5) + 2,
-    comment: '搞得不丑',
-  },
-  {
-    key: 2,
-    consumer: '王先生',
-    duration: 500,
-    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
-    rate: Math.floor(Math.random() * 5) + 1,
-    comment: '搞得不丑',
-  },
-  {
-    key: 3,
-    consumer: '刘先生',
-    duration: 10,
-    date: dayjs().format('YYYY/MM/DD HH:mm:ss'),
-    rate: 5,
-    comment: '搞得不丑',
-  },
-];
+function ConsultInfo(props) {
+  const { title, info } = props;
+  return (
+    <div className="flex-1 flex flex-col justify-center items-center border-r last:border-r-0">
+      <p className="mt-2 text-green-600 text-xs">{title}</p>
+      <p className="mt-8 mb-6 text-4xl">{info}</p>
+    </div>
+  );
+}
 
 function Dashboard() {
-  const renderConsultInfo = (title, info) => {
-    return (
-      <div className="flex-1 flex flex-col justify-center items-center border-r last:border-r-0">
-        <p className="mt-2 text-green-600 text-xs">{title}</p>
-        <p className="mt-8 mb-6 text-4xl">{info}</p>
-      </div>
-    );
-  };
+  const user = useSelector(state => state.user);
+
+  const [overallStatistics, setOverallStatistics] = useState({
+    avgScore: 0,
+    consultCnt: 0,
+    currentConsultCnt: 0,
+    todayConsultCnt: 0,
+    todayTotalTime: 0,
+  });
+  const [tableData, setTableData] = useState([]);
+  const [dutyList, setDutyList] = useState([]);
+
+  useEffect(() => {
+    service
+      .getCounselorRecord({ pageSize: 4, pageNumber: 1, userId: user.userId })
+      .then(res => {
+        console.log({ res });
+        setTableData(consultResponseToTableRow(res));
+      });
+    service.getArrangementInfo(user.userId).then(res => {
+      setDutyList(arrangementResponseToDutyList(res));
+    });
+    Promise.all([
+      service.getCounselorAverageScore(user.userId),
+      service.getTodayConsultStat(user.userId),
+      service.getCurrentConsultCount(user.userId),
+    ]).then(([avgScoreRes, todayConsultStatRes, currentConsultCntRes]) => {
+      setOverallStatistics({
+        avgScore: avgScoreRes.data.data.avgScore,
+        consultCnt: avgScoreRes.data.data.totalCount,
+        currentConsultCnt: currentConsultCntRes.data.data,
+        todayConsultCnt: todayConsultStatRes.data.data.consultCnt,
+        todayTotalTime: todayConsultStatRes.data.data.totalTime,
+      });
+    });
+  }, []);
 
   return (
     <div className="m-4">
@@ -62,7 +70,12 @@ function Dashboard() {
         <div className="flex-1 flex flex-col">
           {/* 个人信息 */}
           <div className="mb-4 p-4 flex bg-white space-x-4">
-            <img className="w-28 object-cover" src={photoUrl} alt="头像" />
+            <img
+              className="w-28 object-cover"
+              style={{ aspectRatio: '3 / 4' }}
+              src={user.avatarUrl}
+              alt="头像"
+            />
             <div className="flex-1 flex flex-col">
               <div>
                 <div className="flex space-x-3 items-center">
@@ -75,7 +88,11 @@ function Dashboard() {
               </div>
               <div className="flex-1 flex flex-col justify-center">
                 <div>我的综合评价</div>
-                <Rate disabled defaultValue={3} />
+                <Rate
+                  disabled
+                  value={roundSemi(overallStatistics.avgScore)}
+                  allowHalf
+                />
               </div>
               <button className="px-1 py-1 w-max bg-green-500 text-white text-xs rounded-sm">
                 咨询设置
@@ -83,14 +100,23 @@ function Dashboard() {
             </div>
             <div className="w-48 flex flex-col justify-center items-center text-white space-y-1 bg-indigo-theme">
               <p className="">累计完成咨询</p>
-              <p className="text-3xl">12353</p>
+              <p className="text-3xl">{overallStatistics.consultCnt}</p>
             </div>
           </div>
           {/* 咨询次数时长信息 */}
           <div className="flex-1 flex p-4 bg-white">
-            {renderConsultInfo('今日咨询数', 35)}
-            {renderConsultInfo('今日咨询时长', '6:12:30')}
-            {renderConsultInfo('当前会话数', 2)}
+            <ConsultInfo
+              title="今日咨询数"
+              info={overallStatistics.todayConsultCnt}
+            />
+            <ConsultInfo
+              title="今日咨询时长"
+              info={duration(overallStatistics.todayTotalTime)}
+            />
+            <ConsultInfo
+              title="当前会话数"
+              info={overallStatistics.currentConsultCnt}
+            />
           </div>
         </div>
 
@@ -104,10 +130,11 @@ function Dashboard() {
               <CalendarOutlined />
             </div>
             <p className="text-gray-500 text-xs">
-              本月共 {dayjs().daysInMonth()} 天，需值班 XX 天
+              本月共 {dayjs().daysInMonth()} 天，需值班{' '}
+              {getMonthTotalDutyDay(dutyList.map(item => item.dutyDay))} 天
             </p>
           </div>
-          <Calendar className="flex-1 mt-4" />
+          <Calendar className="flex-1 mt-4" dutyList={dutyList} />
         </div>
       </div>
 

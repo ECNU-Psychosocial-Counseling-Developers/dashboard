@@ -32,6 +32,12 @@ const tableColumns = [
     key: 'comment',
   },
   {
+    title: '督导求助',
+    dataIndex: 'supervisor',
+    key: 'supervisor',
+    render: text => (text ? text : '无'),
+  },
+  {
     title: '操作',
     dataIndex: 'operation',
     key: 'operation',
@@ -48,7 +54,7 @@ const tableColumns = [
   },
 ];
 
-export default function RecordTable(props) {
+export default function AllConsultRecordTable(props) {
   return (
     <Table
       // TODO: 生产环境下不使用 random

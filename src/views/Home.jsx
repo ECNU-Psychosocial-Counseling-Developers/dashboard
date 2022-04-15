@@ -12,6 +12,7 @@ function Home() {
 
   const updateConversation = () => {
     getConversationList().then(res => {
+      console.log('conversationList →', res);
       dispatch({
         type: 'conversation/get',
         payload: res.data.conversationList,
@@ -38,7 +39,7 @@ function Home() {
         updateConversation();
       }
     }, 50);
-  }, [user.userID]);
+  }, [user.userId]);
 
   return (
     <div className="min-h-screen flex bg-gray-100">

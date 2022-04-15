@@ -17,16 +17,17 @@ import AdminCalendar from './views/Admin/Calendar';
 import AdminSupervisorManage from './views/Admin/SupervisorManage';
 import AdminCounselorManage from './views/Admin/CounselorManage';
 import AdminUserManage from './views/Admin/UserManage';
+import { Role } from './enum';
 
 function App() {
   const user = useSelector(state => state.user);
 
   const conversation = () => {
-    if (user.role === 'counselor') {
+    if (user.role === Role.counselor) {
       return <CounselorConversation />;
-    } else if (user.role === 'supervisor') {
+    } else if (user.role === Role.supervisor) {
       return <SupervisorConversation />;
-    } else if (user.role === 'admin') {
+    } else if (user.role === Role.admin) {
       return <div>null</div>;
     }
   };
@@ -35,13 +36,13 @@ function App() {
     <div className="min-h-screen">
       <Routes>
         <Route path="/" element={<Home />}>
-          {user.role === 'counselor' && (
+          {user.role === Role.counselor && (
             <>
               <Route index element={<CounselorDashboard />} />
               <Route path="record" element={<CounselorRecord />} />
             </>
           )}
-          {user.role === 'supervisor' && (
+          {user.role === Role.supervisor && (
             <>
               <Route index element={<SupervisorDashboard />} />
               <Route
@@ -51,7 +52,7 @@ function App() {
               <Route path="ask-record" element={<SupervisorAskRecord />} />
             </>
           )}
-          {user.role === 'admin' && (
+          {user.role === Role.admin && (
             <>
               <Route index element={<AdminDashboard />} />
               <Route path="consult-record" element={<AdminConsultRecord />} />
@@ -67,8 +68,8 @@ function App() {
               <Route path="user-manage" element={<AdminUserManage />} />
             </>
           )}
-          {user.role !== 'admin' && (
-            <Route path="/conversation/:userID" element={conversation()} />
+          {user.role !== Role.admin && (
+            <Route path="/conversation/:userId" element={conversation()} />
           )}
         </Route>
         <Route path="/register" element={<Register />} />

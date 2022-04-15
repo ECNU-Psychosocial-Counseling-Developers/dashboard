@@ -40,6 +40,7 @@ function createMessage(userID, text) {
     payload: {
       text,
     },
+    cloudCustomData: 'banqinghe says hello',
   });
 }
 

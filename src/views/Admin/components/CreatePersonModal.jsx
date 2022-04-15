@@ -33,7 +33,7 @@ export default function CreatePersonModal(props) {
     if (type === 'counselor') {
       setCandidateList(
         Array.from({ length: 10 }).map((_, index) => ({
-          userID: index,
+          userId: index,
           name: `${roleName} ${index}`,
         }))
       );
@@ -99,7 +99,10 @@ export default function CreatePersonModal(props) {
                   name="IDNumber"
                   render={<Input placeholder="请输入身份证号码" />}
                   rules={[
-                    { pattern: /^\d{18}$/, message: '请输入18位身份证号码' },
+                    {
+                      pattern: /^\d{17}(\d|X)$/,
+                      message: '请输入18位身份证号码',
+                    },
                   ]}
                 />
               </div>
@@ -128,7 +131,7 @@ export default function CreatePersonModal(props) {
                   <Form.Item name="boundSupervisor">
                     <Select mode="multiple" id="createBoundSupervisor">
                       {candidateList.map(candidate => (
-                        <Option key={candidate.userID} value={candidate.userID}>
+                        <Option key={candidate.userId} value={candidate.userId}>
                           {candidate.name}
                         </Option>
                       ))}
@@ -149,7 +152,7 @@ export default function CreatePersonModal(props) {
                   render={<Input placeholder="请输入用户名" />}
                   rules={[
                     {
-                      pattern: /^[a-zA-Z_]{6,16}$/,
+                      pattern: /^[a-zA-Z0-9_]{6,16}$/,
                       message: '请输入6-16位用户名, 仅允许使用字母和下划线',
                     },
                   ]}

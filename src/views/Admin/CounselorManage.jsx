@@ -8,15 +8,18 @@ import {
 } from '../../utils';
 import CreatePersonModal from './components/CreatePersonModal';
 import ModifyPersonModal from './components/ModifyPersonModal';
+import { Role } from '../../enum';
 
 export default function CounselorManage() {
   const [createPersonModalVisible, setCreatePersonModalVisible] =
     useState(false);
   const [modifyModalVisible, setModifyModalVisible] = useState(false);
   const [tableData, setTableData] = useState([]);
+
+  // TODO: 这里的role 字段正确吗
   const [currentInfo, setCurrentInfo] = useState({
     name: '',
-    role: 'counselor',
+    role: Role.counselor,
     boundSupervisor: [],
     counselorSum: 0,
     duration: 1000,
@@ -145,7 +148,7 @@ export default function CounselorManage() {
           size: 'default',
           defaultCurrent: 1,
           total: 100,
-          defaultPageSize: 15,
+          defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
         }}

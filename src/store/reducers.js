@@ -1,17 +1,20 @@
 import { logout } from '../im';
 
 const defaultState = {
-  user: {
-    name: '初始姓名',
-    username: '',
-    userID: '',
-    role: 'admin',
-    avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
-  },
+  user: localStorage.getItem('userInfo')
+    ? JSON.parse(localStorage.getItem('userInfo'))
+    : {
+        name: '咨询师',
+        username: 'zixunshi',
+        userId: '1',
+        role: 'ROLE_COUNSELOR',
+        avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
+      },
   conversationList: [],
 };
 
 function loginReducer(state, action) {
+  localStorage.setItem('userInfo', JSON.stringify(action.payload));
   return {
     ...state,
     user: action.payload,
@@ -19,12 +22,13 @@ function loginReducer(state, action) {
 }
 
 function logoutReducer(state, action) {
+  localStorage.removeItem('userInfo');
   logout();
   return {
     ...state,
     user: {
       username: '',
-      userID: '',
+      userId: '',
       role: '',
     },
   };

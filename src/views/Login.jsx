@@ -4,6 +4,9 @@ import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import backgroundUrl from '../assets/background.png';
 import { useDispatch } from 'react-redux';
 import { login, getConversationList } from '../im';
+import { Role } from '../enum';
+import service from '../service';
+import { UserResToUserInfo } from '../utils';
 
 const secondUserID = import.meta.env.VITE_USER_ID;
 if (secondUserID) {
@@ -17,37 +20,38 @@ function Login() {
   const handleLogin = values => {
     console.log('login', values);
     // fake user info, same as defaultState
-    dispatch({
-      type: 'user/login',
-      payload: {
-        name: secondUserID ? '春生' : '福贵',
-        username: 'chunsheng',
-        userID: secondUserID || '01',
-        role: 'counselor',
-        avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
-      },
-    });
-    login(secondUserID || '01');
-    navigate('/');
-    // .then(res => {
-    //   console.log('login success');
-    //   return getConversationList();
-    // })
-    // .then(res => {
-    //   dispatch({
-    //     type: 'conversation/get',
-    //     payload: res.data.conversationList,
-    //   });
+    // dispatch({
+    //   type: 'user/login',
+    //   payload: {
+    //     name: secondUserID ? '春生' : '福贵',
+    //     username: 'chunsheng',
+    //     userId: secondUserID || '1',
+    //     role: roleMap[values.username] ?? Role.counselor,
+    //     avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
+    //   },
     // });
-    // service.userLogin({
-    //   username: values.username,
-    //   password: values.password,
-    // }).then(res => {
-    //   console.log('login res:', res.data);
-    //   dispatch({type: 'user/updateInfo', payload: res.data});
-    // }).catch(() => {
-    //   message.warning('用户名或密码错误');
-    // })
+
+    service
+      .login(values.username, values.password)
+      .then(data => {
+        let userInfo = data;
+        if (data.role !== Role.admin) {
+          userInfo = UserResToUserInfo(data);
+        }
+        dispatch({
+          type: 'user/login',
+          payload: userInfo,
+        });
+        if (data.role === Role.counselor || data.role === Role.supervisor) {
+          console.log('TIM login, userId = %s', userInfo.userId);
+          login(userInfo.userId.toString());
+        }
+        navigate('/');
+      })
+      .catch(err => {
+        console.error('login error', err);
+        message.error('用户名或密码错误');
+      });
   };
 
   return (

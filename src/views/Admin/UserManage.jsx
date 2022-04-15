@@ -12,12 +12,26 @@ export default function UserManage() {
     // getTableData(1, 3, name, date);
   };
 
-  const handlePageNumberChange = () => {};
+  const handlePageNumberChange = () => {
+    setTableData(
+      Array.from({ length: 10 }, (_, index) => ({
+        name: `李白 ${index}`,
+        role: '用户',
+        gender: Math.random() > 0.5 ? 'male' : 'female',
+        username: window.btoa(Math.random()),
+        phoneNumber: (Math.random() * 10 ** 8).toFixed(0),
+        emergencyContact: '杜甫' + index,
+        emergencyContactPhone: (Math.random() * 10 ** 8).toFixed(0),
+        lastConsultTime: Date.now(),
+        status: Math.random() > 0.5 ? 'blocked' : 'normal',
+      }))
+    );
+  };
 
   useEffect(() => {
     // TODO: 网络获取数据
     setTableData(
-      Array.from({ length: 100 }, (_, index) => ({
+      Array.from({ length: 10 }, (_, index) => ({
         name: `李白 ${index}`,
         role: '用户',
         gender: Math.random() > 0.5 ? 'male' : 'female',
@@ -134,7 +148,7 @@ export default function UserManage() {
           size: 'default',
           defaultCurrent: 1,
           total: 100,
-          defaultPageSize: 15,
+          defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
         }}

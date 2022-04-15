@@ -30,7 +30,7 @@ export default function CreatePersonModal(props) {
     if (type === 'counselor') {
       setCandidateList(
         Array.from({ length: 10 }).map((_, index) => ({
-          userID: index,
+          userId: index,
           name: `${roleName} ${index}`,
         }))
       );
@@ -81,7 +81,7 @@ export default function CreatePersonModal(props) {
                   render={
                     <Select mode="multiple" id="modifyBoundSupervisor">
                       {candidateList.map(candidate => (
-                        <Option key={candidate.userID} value={candidate.userID}>
+                        <Option key={candidate.userId} value={candidate.userId}>
                           {candidate.name}
                         </Option>
                       ))}

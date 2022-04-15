@@ -8,16 +8,15 @@ import CommentModal from './components/CommentModal';
 import SelectSupervisorModal from './components/SelectSupervisorModal';
 import ConsultConversation from './components/ConsultConversation';
 import AskSupervisorConversation from './components/AskSupervisorConversation';
-import dayjs from 'dayjs';
 import { setMessageRead, getMessageList, getConversationList } from '../../im';
-import { saveFileToFileSystem } from '../../utils';
+import { saveFileToFileSystem, duration } from '../../utils';
 
 // TODO: 需要满足实时显示咨询双方的消息（轮询/别的方式）
 export default function Conversation() {
   const dispatch = useDispatch();
   const conversationList = useSelector(state => state.conversationList);
 
-  const { userID } = useParams();
+  const { userId } = useParams();
 
   const consultConversationID = sessionStorage.getItem('currentConversationID');
   const supervisorConversationID = localStorage.getItem(consultConversationID);
@@ -119,7 +118,7 @@ export default function Conversation() {
       data: {
         name: '弗洛伊德',
         avatarUrl: 'https://placekitten.com/g/50/50',
-        userID: '10',
+        userId: '10',
       },
     };
     Promise.resolve(res).then(res => {
@@ -130,7 +129,7 @@ export default function Conversation() {
       });
       localStorage.setItem(
         consultConversationID,
-        'C2C' + supervisorInfo.userID
+        'C2C' + supervisorInfo.userId
       );
       localStorage.setItem(
         consultConversationID + '_supervisorInfo',
@@ -210,10 +209,10 @@ export default function Conversation() {
         setSupervisorNextMessageID
       );
     }
-    // TODO: 通过 userID 获取当前聊天对象的信息
+    // TODO: 通过 userId 获取当前聊天对象的信息
     const infoRes = {
       data: {
-        name: '牡丹' + userID,
+        name: userId,
         phoneNumber: '133****4322',
         avatarUrl: 'https://placekitten.com/g/100/100',
       },
@@ -248,7 +247,7 @@ export default function Conversation() {
       clearInterval(durationTimerRef.current);
       clearInterval(pollingIsOver.current);
     };
-  }, [userID]);
+  }, [userId]);
 
   // 收到新的消息时会更新全局 conversationList，若当前会话有未读消息则重新获取聊天信息，并标记已读
   // 标记已读之后重新更新 conversationList，消除侧边栏上的未读计数
@@ -281,7 +280,8 @@ export default function Conversation() {
   return (
     <div
       className="relative mx-6 my-3 bg-white flex shadow-md"
-      style={{ minHeight: 'calc(100vh - 96px)' }}
+      // style={{ minHeight: 'calc(100vh - 96px)' }}
+      style={{ height: 'calc(100vh - 96px)' }}
     >
       {/* 侧边信息 */}
       <div className="w-48 p-6 flex flex-col justify-start gap-12 text-gray-50 bg-indigo-theme">
@@ -304,7 +304,7 @@ export default function Conversation() {
               <div className="space-y-1">
                 <p>总共用时</p>
                 <p className="text-3xl">
-                  {dayjs.duration(consultStatus.duration).format('HH:mm:ss')}
+                  {duration(Math.floor(consultStatus.duration / 1000))}
                 </p>
               </div>
               <div>
@@ -321,7 +321,7 @@ export default function Conversation() {
               <div className="space-y-1">
                 <p>已咨询时间</p>
                 <p className="text-3xl">
-                  {dayjs.duration(consultStatus.duration).format('HH:mm:ss')}
+                  {duration(Math.floor(consultStatus.duration / 1000))}
                 </p>
               </div>
             </>
@@ -366,7 +366,7 @@ export default function Conversation() {
           askStatus={askStatus}
           conversationRef={supervisorConversationRef}
           isOver={consultStatus.isOver}
-          conversationID={'C2C' + askStatus.supervisorInfo.userID}
+          conversationID={'C2C' + askStatus.supervisorInfo.userId}
           messages={supervisorMessages}
           setMessages={setSupervisorMessages}
           nextReqMessageID={supervisorNextMessageID}

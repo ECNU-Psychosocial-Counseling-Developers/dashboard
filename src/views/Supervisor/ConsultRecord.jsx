@@ -1,32 +1,46 @@
 import { useState, useEffect } from 'react';
 import { Input, Form, DatePicker } from 'antd';
-import RecordTable from '../../components/RecordTable';
-import { debounce } from '../../utils';
+import AllConsultRecordTable from '../../components/AllConsultRecordTable';
+import { debounce, allConsultResponseToTableRow } from '../../utils';
 import service from '../../service';
+import dayjs from 'dayjs';
 
 export default function ConsultRecord() {
   const [tableData, setTableData] = useState([]);
   const [total, setTotal] = useState(0);
 
-  const getTableData = (pageNumber = 1, pageSize = 20, name = '', date) => {
+  const getTableData = (
+    pageNumber = 1,
+    pageSize = 10,
+    name,
+    startTime,
+    endTime
+  ) => {
     service
-      .getCounselorRecord({
+      .getAllConsultRecord({
         pageNumber,
         pageSize,
         name,
-        date,
+        startTime,
+        endTime,
       })
       .then(res => {
-        console.log(res.data);
-        setTableData(res.data.data);
-        setTotal(res.data.total);
+        console.log(res);
+        setTableData(allConsultResponseToTableRow(res));
+        setTotal(res.data.data.total);
       });
   };
 
   const handleSearchFromChange = (_, allValues) => {
     const { name, date } = allValues;
-    console.log(new Date(date._d).getTime());
-    getTableData(1, 3, name, date);
+    console.log({ date });
+    getTableData(
+      1,
+      10,
+      name,
+      date ? dayjs(date._d).startOf('day').valueOf() : undefined,
+      date ? dayjs(date._d).endOf('day').valueOf() : undefined
+    );
   };
 
   const handlePageNumberChange = (pageNumber, pageSize) => {
@@ -35,7 +49,7 @@ export default function ConsultRecord() {
   };
 
   useEffect(() => {
-    getTableData(1, 15);
+    getTableData(1, 10);
   }, []);
 
   return (
@@ -58,13 +72,13 @@ export default function ConsultRecord() {
           </Form.Item>
         </div>
       </Form>
-      <RecordTable
+      <AllConsultRecordTable
         className="mt-4 bg-white"
         pagination={{
           size: 'default',
           defaultCurrent: 1,
           total: total,
-          defaultPageSize: 15,
+          defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
         }}

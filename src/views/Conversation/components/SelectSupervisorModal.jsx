@@ -1,29 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, Avatar } from 'antd';
 import RadioCardGroup from '../../../components/RadioCardGroup';
-
-const mockSupervisorInfoList = [
-  {
-    name: '弗洛伊德',
-    avatarUrl: 'https://placekitten.com/g/50/50',
-    userID: '10',
-  },
-  {
-    name: '柏拉图',
-    avatarUrl: 'https://placekitten.com/g/50/50',
-    userID: '11',
-  },
-  {
-    name: '爱因斯坦',
-    avatarUrl: 'https://placekitten.com/g/50/50',
-    userID: '12',
-  },
-  {
-    name: '哆啦A梦',
-    avatarUrl: 'https://placekitten.com/g/50/50',
-    userID: '13',
-  },
-];
+import service from '../../../service';
 
 export default function SelectSupervisorModal(props) {
   const { visible, onCancel, onSubmit } = props;
@@ -39,9 +17,17 @@ export default function SelectSupervisorModal(props) {
   };
 
   useEffect(() => {
-    // TODO: 获取当前可以请求的督导
-    setSupervisorInfoList(mockSupervisorInfoList);
-  }, []);
+    if (visible) {
+      service.getOnlineSupervisor().then(res => {
+        // TODO: photo url replace
+        const supervisorList = res.data.data.counselorList.map(info => ({
+          ...info,
+          photo: 'https://placekitten.com/g/50/50',
+        }));
+        setSupervisorInfoList(supervisorList);
+      });
+    }
+  }, [visible]);
 
   return (
     <Modal
@@ -55,10 +41,10 @@ export default function SelectSupervisorModal(props) {
         <RadioCardGroup
           name="supervisor"
           options={supervisorInfoList.map(info => ({
-            value: info.userID,
+            value: info.id,
             content: (
               <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded border">
-                <Avatar src={info.avatarUrl} />
+                <Avatar src={info.photo} />
                 <p>{info.name}</p>
               </div>
             ),

@@ -8,15 +8,15 @@ import CommentModal from './components/CommentModal';
 import SelectSupervisorModal from './components/SelectSupervisorModal';
 import ConsultConversation from './components/ConsultConversation';
 import AskSupervisorConversation from './components/AskSupervisorConversation';
-import dayjs from 'dayjs';
 import { setMessageRead, getMessageList, getConversationList } from '../../im';
-import { saveFileToFileSystem } from '../../utils';
+import { saveFileToFileSystem, duration } from '../../utils';
+import service from '../../service';
 
 export default function Conversation() {
   const dispatch = useDispatch();
   const conversationList = useSelector(state => state.conversationList);
 
-  const { userID } = useParams();
+  const { userId } = useParams();
 
   const consultConversationID = sessionStorage.getItem('currentConversationID');
   const supervisorConversationID = localStorage.getItem(consultConversationID);
@@ -55,9 +55,11 @@ export default function Conversation() {
   const pollingTimerRef = useRef();
 
   const scrollMessageBottom = ref => {
-    ref.current.lastChild.scrollIntoView({
-      behavior: 'smooth',
-    });
+    if (ref.current.lastChild) {
+      ref.current.lastChild.scrollIntoView({
+        behavior: 'smooth',
+      });
+    }
   };
 
   const refreshDuration = () => {
@@ -78,6 +80,13 @@ export default function Conversation() {
 
   const pollingIsOver = interval => {
     pollingTimerRef.current = setInterval(() => {
+      // TODO: 轮询请求，通过 endTime 是否为空判断是否结束
+      // service.getConsultInfo('14').then(res => {
+      //   const info = res.data.data;
+      //   if (!info.endTime) {
+      //     ...
+      //   }
+      // });
       const consultRes = {
         data: {
           isOver: false,
@@ -100,7 +109,7 @@ export default function Conversation() {
             comment,
             duration: Date.now() - startTime,
           });
-          setCommentModalVisible(true);
+          // setCommentModalVisible(true);
         }
       });
     }, interval);
@@ -118,7 +127,7 @@ export default function Conversation() {
       data: {
         name: '弗洛伊德',
         avatarUrl: 'https://placekitten.com/g/50/50',
-        userID: '10',
+        userId: '10',
       },
     };
     Promise.resolve(res).then(res => {
@@ -129,7 +138,7 @@ export default function Conversation() {
       });
       localStorage.setItem(
         consultConversationID,
-        'C2C' + supervisorInfo.userID
+        'C2C' + supervisorInfo.userId
       );
       localStorage.setItem(
         consultConversationID + '_supervisorInfo',
@@ -176,11 +185,20 @@ export default function Conversation() {
     }
   };
 
-  const getInitMessages = (conversationID, setNextMessageID, setMessages) => {
+  const getInitMessages = (
+    conversationID,
+    setNextMessageID,
+    setMessages,
+    conversationRef
+  ) => {
+    console.log('conversationID', conversationID);
     getMessageList({ conversationID }).then(res => {
       const messageList = res.data.messageList;
-      setNextMessageID(res.data.isCompleted ? '' : res.data.nextReqMessageID);
-      setMessages(messageList);
+      flushSync(() => {
+        setNextMessageID(res.data.isCompleted ? '' : res.data.nextReqMessageID);
+        setMessages(messageList);
+      });
+      conversationRef.current.lastChild.scrollIntoView();
     });
   };
 
@@ -200,19 +218,21 @@ export default function Conversation() {
     getInitMessages(
       consultConversationID,
       setConsultNextMessageID,
-      setConsultMessages
+      setConsultMessages,
+      consultConversationRef
     );
     if (supervisorConversationID && askStatus.asking) {
       getInitMessages(
         supervisorConversationID,
         setSupervisorNextMessageID,
-        setSupervisorNextMessageID
+        setSupervisorNextMessageID,
+        supervisorConversationRef
       );
     }
     // TODO: 通过 userID 获取当前聊天对象的信息
     const infoRes = {
       data: {
-        name: '牡丹' + userID,
+        name: userId,
         phoneNumber: '133****4322',
         avatarUrl: 'https://placekitten.com/g/100/100',
       },
@@ -226,6 +246,7 @@ export default function Conversation() {
         comment: `挺好的，聊得很开心。我觉得搞得挺不错的。俗话说“子曰：「學而時習之，不亦說乎？有朋自遠方來，不亦樂乎？人不知而不慍，不亦君子乎？”`,
       },
     };
+    // TODO:
     Promise.all([Promise.resolve(infoRes), Promise.resolve(consultRes)])
       .then(([{ data: infoData }, { data: consultData }]) => {
         const { isOver, startTime, score, comment } = consultData;
@@ -247,7 +268,7 @@ export default function Conversation() {
       clearInterval(durationTimerRef.current);
       clearInterval(pollingIsOver.current);
     };
-  }, [userID]);
+  }, [userId]);
 
   // 收到新的消息时会更新全局 conversationList，若当前会话有未读消息则重新获取聊天信息，并标记已读
   // 标记已读之后重新更新 conversationList，消除侧边栏上的未读计数
@@ -280,7 +301,7 @@ export default function Conversation() {
   return (
     <div
       className="relative mx-6 my-3 bg-white flex shadow-md"
-      style={{ minHeight: 'calc(100vh - 96px)' }}
+      style={{ height: 'calc(100vh - 96px)' }}
     >
       {/* 侧边信息 */}
       <div className="w-48 p-6 flex flex-col justify-start gap-12 text-gray-50 bg-indigo-theme">
@@ -303,7 +324,7 @@ export default function Conversation() {
               <div className="space-y-1">
                 <p>总共用时</p>
                 <p className="text-3xl">
-                  {dayjs.duration(consultStatus.duration).format('HH:mm:ss')}
+                  {duration(Math.floor(consultStatus.duration / 1000))}
                 </p>
               </div>
               <div>
@@ -320,7 +341,7 @@ export default function Conversation() {
               <div className="space-y-1">
                 <p>已咨询时间</p>
                 <p className="text-3xl">
-                  {dayjs.duration(consultStatus.duration).format('HH:mm:ss')}
+                  {duration(Math.floor(consultStatus.duration / 1000))}
                 </p>
               </div>
             </>
@@ -365,7 +386,7 @@ export default function Conversation() {
           askStatus={askStatus}
           conversationRef={supervisorConversationRef}
           isOver={consultStatus.isOver}
-          conversationID={'C2C' + askStatus.supervisorInfo.userID}
+          conversationID={'C2C' + askStatus.supervisorInfo.userId}
           messages={supervisorMessages}
           setMessages={setSupervisorMessages}
           nextReqMessageID={supervisorNextMessageID}
@@ -374,12 +395,12 @@ export default function Conversation() {
         />
       )}
 
-      {/* 结束评价弹窗*/}
-      <CommentModal
+      {/* 结束评价弹窗 评价是用户单方的 */}
+      {/* <CommentModal
         visible={commentModalVisible}
         onCancel={() => setCommentModalVisible(false)}
         onSubmit={submitComment}
-      />
+      /> */}
 
       {/* 选择咨询师弹窗 */}
       <SelectSupervisorModal

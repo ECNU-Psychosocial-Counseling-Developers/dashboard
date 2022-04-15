@@ -39,7 +39,7 @@ export default function AskSupervisorConversation(props) {
     if (!text.trim().length) {
       return;
     }
-    // const targetUserID = user.userID === '01' ? '02' : '01';
+    // const targetUserID = user.userId === '01' ? '02' : '01';
     // const newMessage = createMessage(targetUserID, text);
     // sendMessage(newMessage).then(e => session.setItem('supervisor_' + clientConversationID, e.data.message.conversationID));
     // flushSync(() => {

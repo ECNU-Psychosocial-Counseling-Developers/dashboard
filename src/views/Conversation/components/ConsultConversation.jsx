@@ -4,6 +4,7 @@ import { useSelector } from 'react-redux';
 import ChatBubble from './ChatBubbles';
 import MessageTextArea from './MessageTextArea';
 import { createMessage, sendMessage, getMessageList } from '../../../im';
+import { useParams } from 'react-router-dom';
 
 export default function ConsultConversation(props) {
   const {
@@ -16,9 +17,13 @@ export default function ConsultConversation(props) {
     setMessages,
     nextReqMessageID,
     setNextReqMessageID,
+    // consultId 用以存储消息
+    // consultId =
   } = props;
 
   const user = useSelector(state => state.user);
+
+  const targetUserId = useParams().userId;
 
   const getMoreMessages = () => {
     getMessageList({
@@ -38,8 +43,9 @@ export default function ConsultConversation(props) {
     if (!text.trim().length) {
       return;
     }
-    const targetUserID = user.userID === '01' ? '02' : '01';
-    const newMessage = createMessage(targetUserID, text);
+    // const targetUserID = user.userId === '01' ? '02' : '01';
+    // TODO: 需要得知咨询 id - post /msg/save
+    const newMessage = createMessage(targetUserId, text);
     sendMessage(newMessage);
     flushSync(() => {
       setMessages(preMessages => [...preMessages, newMessage]);
@@ -51,11 +57,15 @@ export default function ConsultConversation(props) {
   };
 
   return (
-    <div className={'flex flex-col' + ' ' + className}>
+    <div
+      className={'flex flex-col h-full' + ' ' + className}
+      // style={{ height: 'calc(100vh - 200px)' }}
+    >
       <div
         ref={conversationRef}
         className="flex-1 p-6 overflow-y-auto space-y-1.5"
-        style={{ maxHeight: 'calc(100vh - 248px)', minWidth: 350 }}
+        style={{ minWidth: 350 }}
+        // style={{ maxHeight: 'calc(100vh - 248px)', minWidth: 350 }}
       >
         {!!nextReqMessageID && (
           <div className="text-center mb-3">

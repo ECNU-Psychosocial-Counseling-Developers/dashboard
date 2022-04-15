@@ -1,33 +1,40 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useSelector } from 'react-redux';
 import { Form, Input, DatePicker } from 'antd';
-import { debounce } from '../../utils';
-
+import { consultResponseToTableRow, debounce } from '../../utils';
 import RecordTable from '../../components/RecordTable';
 import service from '../../service';
 
 export default function Record() {
+  const user = useSelector(state => state.user);
+
+  const formValuesRef = useRef({ name: undefined, date: undefined });
+
   const [tableData, setTableData] = useState([]);
   const [total, setTotal] = useState(0);
 
-  const getTableData = (pageNumber = 1, pageSize = 20, name = '', date) => {
+  const getTableData = (pageNumber = 1, pageSize = 15) => {
     service
       .getCounselorRecord({
         pageNumber,
         pageSize,
-        name,
-        date,
+        userId: user.userId,
+        ...formValuesRef.current,
       })
       .then(res => {
-        console.log(res.data);
-        setTableData(res.data.data);
-        setTotal(res.data.total);
+        setTableData(consultResponseToTableRow(res));
+        setTotal(res.data.data.total);
       });
   };
 
   const handleSearchFromChange = (_, allValues) => {
     const { name, date } = allValues;
-    console.log(date._d.getTime());
-    getTableData(1, 3, name, date);
+    formValuesRef.current = {
+      name,
+      startTime: date?._d.setHours(0, 0, 0),
+      endTime: date?._d.setHours(23, 59, 59),
+    };
+    getTableData();
   };
 
   const handlePageNumberChange = (pageNumber, pageSize) => {

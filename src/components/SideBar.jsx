@@ -13,18 +13,19 @@ import { IconShakeHand } from '../icons';
 import { useSelector } from 'react-redux';
 import { IconCross } from '../icons';
 import { setMessageRead, deleteConversation } from '../im';
+import { Role } from '../enum';
 
 const userToLink = {
-  counselor: [
+  [Role.counselor]: [
     { label: '首页', link: '', icon: <HomeOutlined /> },
     { label: '咨询记录', link: 'record', icon: <FileTextOutlined /> },
   ],
-  supervisor: [
+  [Role.supervisor]: [
     { label: '首页', link: '', icon: <HomeOutlined /> },
     { label: '咨询记录', link: 'consult-record', icon: <FileTextOutlined /> },
     { label: '求助记录', link: 'ask-record', icon: <IconShakeHand /> },
   ],
-  admin: [
+  [Role.admin]: [
     { label: '首页', link: '', icon: <HomeOutlined /> },
     { label: '咨询记录', link: 'consult-record', icon: <FileTextOutlined /> },
     { label: '排班表', link: 'calendar', icon: <CalendarOutlined /> },
@@ -35,8 +36,9 @@ const userToLink = {
 };
 
 function NavMenu({ user, navigate }) {
+  console.log({ role: user.role });
   const menuItems = userToLink[user.role];
-  const [activeLink, setActiveLink] = useState(menuItems[0].link);
+  const activeLink = location.pathname.slice(1);
 
   const activeClassName = 'bg-gray-600';
 
@@ -51,7 +53,6 @@ function NavMenu({ user, navigate }) {
                 (activeLink === item.link ? ' ' + activeClassName : '')
               }
               onClick={() => {
-                setActiveLink(item.link);
                 navigate(item.link);
               }}
             >
@@ -67,32 +68,34 @@ function NavMenu({ user, navigate }) {
 
 function ChatMenu({ navigate }) {
   const conversationList = useSelector(state => state.conversationList);
-  const userID = useParams();
+  const userId = useParams();
   // interface ChatList {
   //   name: string;
   //   avatarUrl: string;
-  //   userID: string;
+  //   userId: string;
   //   unreadCount: number;
   //   conversationID: string;
   // }
   const [chatList, setChatList] = useState([]);
 
   useEffect(() => {
+    console.log({ conversationList });
     const newChatList = conversationList.map(conversation => {
       return {
-        userID: conversation.userProfile.userID,
+        userId: conversation.userProfile.userID,
         unreadCount: conversation.unreadCount,
         conversationID: conversation.conversationID,
       };
     });
+    console.log({ newChatList });
     if (newChatList.length) {
       // TODO: ajax 请求获取聊天人信息, unreadCount conversation 获取
-      // params: [userID1, userID2, ...]
+      // params: [userId1, userId2, ...]
       // res: [{name, ...}, {name, ...}, {name, ...}]
 
-      const params = newChatList.map(item => item.userID);
-      const res = Array.from({ length: newChatList.length }, () => ({
-        name: '牡丹',
+      const params = newChatList.map(item => item.userId);
+      const res = Array.from({ length: newChatList.length }, (_, index) => ({
+        name: newChatList[index].userId,
         avatarUrl: 'https://placekitten.com/g/100/100',
       }));
       Promise.resolve(res).then(res => {
@@ -108,14 +111,15 @@ function ChatMenu({ navigate }) {
   }, [conversationList]);
 
   const jumpToConversation = targetUserID => {
-    if (userID === targetUserID) {
+    console.log('jump conversation', targetUserID);
+    if (userId === targetUserID) {
       return;
     }
     // 点击后与该用户的会话标记为已读
     setChatList(prevList => {
       const newList = [...prevList];
       const clickItemIndex = newList.findIndex(
-        item => item.userID === targetUserID
+        item => item.userId === targetUserID
       );
       const clickItem = newList[clickItemIndex];
       newList.splice(clickItemIndex, 1);
@@ -137,7 +141,7 @@ function ChatMenu({ navigate }) {
     );
     setChatList(newChatList);
     if (newChatList.length) {
-      navigate(`/conversation/${newChatList[0].userID}`);
+      navigate(`/conversation/${newChatList[0].userId}`);
     } else {
       navigate('/');
     }
@@ -145,14 +149,20 @@ function ChatMenu({ navigate }) {
 
   return (
     <div>
-      <p className="px-6 py-4 text-xs">会话列表</p>
+      {/* TODO: navigate 去除 */}
+      <p
+        className="px-6 py-4 text-xs"
+        onClick={() => navigate('conversation/lcy666')}
+      >
+        会话列表
+      </p>
       <ul>
         {chatList.map((chatItem, index) => {
           return (
             <li className="relative flex items-center" key={index}>
               <button
                 className="flex justify-between items-center w-full pl-6 pr-10 py-3 hover:bg-gray-700"
-                onClick={() => jumpToConversation(chatItem.userID)}
+                onClick={() => jumpToConversation(chatItem.userId)}
               >
                 <div className="space-x-4">
                   <Avatar src={chatItem.avatarUrl} />
@@ -189,10 +199,10 @@ function SideBar() {
     <aside className="w-48 flex-shrink-0 text-white bg-indigo-theme">
       <div className="flex justify-center items-center space-x-3 mt-5 mb-6">
         <Avatar size={64} src="https://placekitten.com/g/300/300" />
-        <p className="text-gray-50">欢迎，{user.name}</p>
+        <p className="text-gray-50">欢迎，{user.name ?? '管理员'}</p>
       </div>
       <NavMenu user={user} navigate={navigate} />
-      {user.role !== 'admin' && <ChatMenu navigate={navigate} />}
+      {user.role !== Role.admin && <ChatMenu navigate={navigate} />}
     </aside>
   );
 }
