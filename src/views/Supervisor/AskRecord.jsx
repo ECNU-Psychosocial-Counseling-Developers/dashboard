@@ -44,7 +44,6 @@ export default function AskRecord() {
   };
 
   const handlePageNumberChange = (pageNumber, pageSize) => {
-    console.log(pageNumber, pageSize);
     getTableData(pageNumber, pageSize);
   };
 

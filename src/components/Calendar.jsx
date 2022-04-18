@@ -40,7 +40,6 @@ function CalendarItem({ className, date, isActive, startTime, endTime }) {
 
 export default function Calendar(props) {
   const { className, style, dutyList } = props;
-  // console.log({ dutyList });
 
   // 本月第一天星期几
   const firstDay = dayjs().date(1).day();

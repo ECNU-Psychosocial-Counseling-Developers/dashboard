@@ -15,7 +15,6 @@ export default function CreatePersonModal(props) {
 
   const handleFinish = () => {
     form.validateFields().then(values => {
-      console.log({ ...currentInfo, ...values, dutyDayList: currentDutyDay });
       onFinish(currentInfo.id, type, currentDutyDay, {
         ...currentInfo,
         ...values,

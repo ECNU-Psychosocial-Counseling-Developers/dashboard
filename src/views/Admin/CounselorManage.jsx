@@ -48,7 +48,6 @@ export default function CounselorManage() {
           message.error('获取失败');
           return;
         }
-        console.log(res.data.data);
         setTableData(res.data.data.counselorList);
         setTotalCount(res.data.data.totalCount);
       });
@@ -75,20 +74,16 @@ export default function CounselorManage() {
       idCardNum: values.IDNumber,
     };
 
-    console.log({ payload });
-
     service.createCounselor(payload).then(res => {
       if (res.data.code !== 200) {
         message.error('创建失败');
       }
-      console.log({ res });
       getTableData(1, 10);
       message.success('创建成功');
     });
   };
 
   const handleModifyCounselor = (id, type, dutyDayList, info) => {
-    console.log(info);
     const {
       id: counselorId,
       name,
@@ -100,16 +95,6 @@ export default function CounselorManage() {
       job,
       idCardNum,
     } = info;
-    console.log('arrangement payload', {
-      id,
-      arrangeList: dutyDayList.map(dutyDay => ({
-        counselorId: id,
-        dutyDay,
-        role: type === 'counselor' ? Role.counselor : Role.supervisor,
-        startTime: '09:00:00',
-        endTime: '17:00:00',
-      })),
-    });
     Promise.all([
       service.modifyCounselor({
         id: counselorId,
@@ -133,7 +118,6 @@ export default function CounselorManage() {
         })),
       }),
     ]).then(([infoRes, arrangementRes]) => {
-      console.log(infoRes.data, arrangementRes.data);
       if (infoRes.data.code !== 200 || arrangementRes.data.code !== 200) {
         message.error('修改失败');
         return;
@@ -197,7 +181,6 @@ export default function CounselorManage() {
         <button
           className="px-6 py-2 bg-green-theme text-gray-50 text-xs rounded-sm"
           onClick={() => {
-            // console.log(record);
             setCurrentInfo(record);
             setModifyModalVisible(true);
           }}

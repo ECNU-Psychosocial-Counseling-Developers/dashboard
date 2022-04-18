@@ -36,7 +36,6 @@ const userToLink = {
 };
 
 function NavMenu({ user, navigate }) {
-  console.log({ role: user.role });
   const menuItems = userToLink[user.role];
   const activeLink = location.pathname.slice(1);
 

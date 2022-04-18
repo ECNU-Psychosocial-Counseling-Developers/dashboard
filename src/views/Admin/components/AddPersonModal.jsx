@@ -45,7 +45,6 @@ export default function AddPersonModal(props) {
     }
     if (type === 'counselor') {
       service.getOffDutyCounselor(dutyDay).then(res => {
-        console.log('counselorList', res.data.data.counselorList);
         setPeopleList(res.data.data.counselorList);
       });
     } else {

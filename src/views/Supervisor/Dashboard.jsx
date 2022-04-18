@@ -77,7 +77,6 @@ export default function Dashboard() {
       service.getTodayConsultStat(user.userId),
       service.getCurrentConsultCount(user.userId),
     ]).then(([todayConsultRes, currentConsultRes]) => {
-      console.log({ currentConsultRes });
       setOverallStatistics({
         todayConsultCnt: todayConsultRes.data.data.consultCnt,
         todayTotalTime: todayConsultRes.data.data.totalTime,

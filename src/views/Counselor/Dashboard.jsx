@@ -42,7 +42,6 @@ function Dashboard() {
     service
       .getCounselorRecord({ pageSize: 4, pageNumber: 1, userId: user.userId })
       .then(res => {
-        console.log({ res });
         setTableData(consultResponseToTableRow(res));
       });
     service.getArrangementInfo(user.userId).then(res => {

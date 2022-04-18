@@ -25,7 +25,6 @@ export default function ConsultRecord() {
         endTime,
       })
       .then(res => {
-        console.log(res);
         setTableData(allConsultResponseToTableRow(res));
         setTotal(res.data.data.total);
       });
@@ -33,7 +32,6 @@ export default function ConsultRecord() {
 
   const handleSearchFromChange = (_, allValues) => {
     const { name, date } = allValues;
-    console.log({ date });
     getTableData(
       1,
       10,
@@ -44,7 +42,6 @@ export default function ConsultRecord() {
   };
 
   const handlePageNumberChange = (pageNumber, pageSize) => {
-    console.log(pageNumber, pageSize);
     getTableData(pageNumber, pageSize);
   };
 

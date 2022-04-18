@@ -98,11 +98,8 @@ const weekNumberToCharacter = {
  * 登陆时返回的用户信息转化为本地 userInfo
  */
 function UserResToUserInfo(data) {
-  console.log('transform', data);
   return {
     avatarUrl: data.photo,
-    // TODO: avatarUrl 后续换成服务端资源（目前未实现静态文件服务）
-    // avatarUrl: 'https://placekitten.com/40/40',
     desc: data.desc,
     email: data.email,
     idCardNum: data.idCardNum,

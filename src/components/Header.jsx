@@ -24,6 +24,7 @@ function Header() {
     newPassword,
     confirmNewPassword,
   }) => {
+    // TODO: 调用修改密码接口
     console.log(prevPassword, newPassword, confirmNewPassword);
     if (newPassword !== confirmNewPassword) {
       message.warning('两次输入密码不一致');

@@ -1,23 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Table, Form, Input, message } from 'antd';
-import { debounce, duration, weekNumberToCharacter } from '../../utils';
-import dayjs from 'dayjs';
+import { debounce } from '../../utils';
 import service from '../../service';
 import { Role } from '../../enum';
 
 export default function UserManage() {
-  // black: false
-  // contactName: "lp"
-  // contactPhone: "12312423412"
-  // desc: "稳稳稳"
-  // email: "10185101257@stu.ecnu.edu.cn"
-  // id: 13
-  // name: "李振康"
-  // phone: "12345678910"
-  // photo: "https://placekitten.com/200/200"
-  // role: "ROLE_CUSTOMER"
-  // state: "OFFLINE"
-  // username: "lzk"
   const [tableData, setTableData] = useState([]);
   const [totalCount, setTotalCount] = useState([]);
 
@@ -33,7 +20,6 @@ export default function UserManage() {
           message.error('获取失败');
           return;
         }
-        console.log(res.data.data);
         setTableData(res.data.data.customerList);
         setTotalCount(res.data.data.totalCount);
       });
@@ -41,7 +27,6 @@ export default function UserManage() {
 
   const handleSearchFromChange = (_, allValues) => {
     const { searchName } = allValues;
-    console.log(searchName);
     getTableData(1, 3, searchName);
   };
 

@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Modal, Form, Input, Select, Radio, Tabs } from 'antd';
 import FormGridItem from './FormGridItem';
 import FooterButtonGroup from './FooterButtonGroup';
 
 const { TabPane } = Tabs;
-const { Option } = Select;
 
 export default function CreatePersonModal(props) {
   const { visible, onSuccess, onCancel, type = 'consult' } = props;

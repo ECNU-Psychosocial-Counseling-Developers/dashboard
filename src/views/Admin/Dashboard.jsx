@@ -1,23 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Pagination, Avatar } from 'antd';
+import { Avatar } from 'antd';
 import service from '../../service';
 import { duration } from '../../utils';
 import * as echarts from 'echarts';
 import dayjs from 'dayjs';
 import { UserState } from '../../enum';
 import { useSelector } from 'react-redux';
-
-const consultData = Array.from({ length: 20 }, (_, index) => ({
-  name: '咨询师' + index,
-  busy: false,
-}));
-consultData[1].busy = true;
-
-const supervisorData = Array.from({ length: 12 }, (_, index) => ({
-  name: '督导' + index,
-  busy: false,
-}));
-supervisorData[1].busy = true;
 
 const todayChartInitOption = {
   tooltip: {

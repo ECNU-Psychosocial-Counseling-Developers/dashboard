@@ -11,7 +11,6 @@ export default function SelectSupervisorModal(props) {
 
   const handleSubmit = () => {
     if (value) {
-      console.log('select supervisor', value);
       onSubmit(value);
     }
   };
