@@ -1,48 +1,77 @@
 import { useState, useEffect } from 'react';
-import { Table, Form, Input } from 'antd';
+import { Table, Form, Input, message } from 'antd';
 import { debounce, duration, weekNumberToCharacter } from '../../utils';
 import dayjs from 'dayjs';
+import service from '../../service';
+import { Role } from '../../enum';
 
 export default function UserManage() {
+  // black: false
+  // contactName: "lp"
+  // contactPhone: "12312423412"
+  // desc: "稳稳稳"
+  // email: "10185101257@stu.ecnu.edu.cn"
+  // id: 13
+  // name: "李振康"
+  // phone: "12345678910"
+  // photo: "https://placekitten.com/200/200"
+  // role: "ROLE_CUSTOMER"
+  // state: "OFFLINE"
+  // username: "lzk"
   const [tableData, setTableData] = useState([]);
+  const [totalCount, setTotalCount] = useState([]);
+
+  const getTableData = (pageNumber = 1, pageSize = 10, name) => {
+    service
+      .getCustomerList({
+        pageNumber,
+        pageSize,
+        name,
+      })
+      .then(res => {
+        if (res.data.code !== 200) {
+          message.error('获取失败');
+          return;
+        }
+        console.log(res.data.data);
+        setTableData(res.data.data.customerList);
+        setTotalCount(res.data.data.totalCount);
+      });
+  };
 
   const handleSearchFromChange = (_, allValues) => {
     const { searchName } = allValues;
     console.log(searchName);
-    // getTableData(1, 3, name, date);
+    getTableData(1, 3, searchName);
   };
 
-  const handlePageNumberChange = () => {
-    setTableData(
-      Array.from({ length: 10 }, (_, index) => ({
-        name: `李白 ${index}`,
-        role: '用户',
-        gender: Math.random() > 0.5 ? 'male' : 'female',
-        username: window.btoa(Math.random()),
-        phoneNumber: (Math.random() * 10 ** 8).toFixed(0),
-        emergencyContact: '杜甫' + index,
-        emergencyContactPhone: (Math.random() * 10 ** 8).toFixed(0),
-        lastConsultTime: Date.now(),
-        status: Math.random() > 0.5 ? 'blocked' : 'normal',
-      }))
-    );
+  const handlePageNumberChange = (pageNumber, pageSize) => {
+    getTableData(pageNumber, pageSize);
+  };
+
+  const toggleBlack = person => {
+    const successCallback = () => getTableData(1, 10);
+    if (person.black) {
+      service.unblackCustomer(person.id).then(res => {
+        if (res.data.code !== 200) {
+          message.error('解除禁用失败');
+        }
+        message.success('解除禁用成功');
+        successCallback();
+      });
+    } else {
+      service.blackCustomer(person.id).then(res => {
+        if (res.data.code !== 200) {
+          message.error('禁用失败');
+        }
+        message.success('禁用成功');
+        successCallback();
+      });
+    }
   };
 
   useEffect(() => {
-    // TODO: 网络获取数据
-    setTableData(
-      Array.from({ length: 10 }, (_, index) => ({
-        name: `李白 ${index}`,
-        role: '用户',
-        gender: Math.random() > 0.5 ? 'male' : 'female',
-        username: window.btoa(Math.random()),
-        phoneNumber: (Math.random() * 10 ** 8).toFixed(0),
-        emergencyContact: '杜甫' + index,
-        emergencyContactPhone: (Math.random() * 10 ** 8).toFixed(0),
-        lastConsultTime: Date.now(),
-        status: Math.random() > 0.5 ? 'blocked' : 'normal',
-      }))
-    );
+    getTableData(1, 10);
   }, []);
 
   const tableColumns = [
@@ -52,52 +81,41 @@ export default function UserManage() {
       key: 'name',
     },
     {
-      title: '性别',
-      dataIndex: 'gender',
-      key: 'gender',
-      render: gender => (gender === 'male' ? '男' : '女'),
-    },
-    {
       title: '用户名',
       dataIndex: 'username',
       key: 'username',
-      render: username => (
-        <div title={username} className="w-36 truncate">
-          {username}
-        </div>
-      ),
     },
     {
       title: '联系电话',
-      dataIndex: 'phoneNumber',
-      key: 'phoneNumber',
+      dataIndex: 'phone',
+      key: 'phone',
+    },
+    {
+      title: '电子邮箱',
+      dataIndex: 'email',
+      key: 'email',
     },
     {
       title: '紧急联系人',
-      dataIndex: 'emergencyContact',
-      key: 'emergencyContact',
+      dataIndex: 'contactName',
+      key: 'contactName',
     },
     {
       title: '紧急联系人电话',
-      dataIndex: 'emergencyContactPhone',
-      key: 'emergencyContactPhone',
+      dataIndex: 'contactPhone',
+      key: 'contactPhone',
     },
     {
       title: '身份',
       dataIndex: 'role',
       key: 'role',
-    },
-    {
-      title: '上次咨询时间',
-      dataIndex: 'lastConsultTime',
-      key: 'lastConsultTime',
-      render: time => dayjs(time).format('YYYY-MM-DD HH:mm:ss'),
+      render: role => (role === Role.customer ? '用户' : '咨询师'),
     },
     {
       title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      render: status => (status === 'blocked' ? '禁用' : '正常'),
+      dataIndex: 'black',
+      key: 'black',
+      render: status => (status ? '禁用' : '正常'),
     },
     {
       title: '操作',
@@ -105,17 +123,17 @@ export default function UserManage() {
       key: 'operation',
       render: (_, record) => (
         <>
-          {record.status === 'blocked' ? (
+          {record.black ? (
             <button
               className="py-2 w-20 bg-green-theme text-gray-50 text-xs rounded-sm"
-              onClick={() => {}}
+              onClick={() => toggleBlack(record)}
             >
               解除禁用
             </button>
           ) : (
             <button
               className="py-2 w-20 bg-red-400 text-gray-50 text-xs rounded-sm"
-              onClick={() => {}}
+              onClick={() => toggleBlack(record)}
             >
               禁用
             </button>
@@ -147,27 +165,13 @@ export default function UserManage() {
         pagination={{
           size: 'default',
           defaultCurrent: 1,
-          total: 100,
+          total: totalCount,
           defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
         }}
         dataSource={tableData}
       />
-
-      {/* <CreatePersonModal
-        visible={createPersonModalVisible}
-        onCancel={() => setCreatePersonModalVisible(false)}
-        onSuccess={handleCreateNewCounselor}
-        type="supervisor"
-      />
-
-      <ModifyPersonModal
-        visible={modifyModalVisible}
-        onCancel={() => setModifyModalVisible(false)}
-        currentInfo={currentInfo}
-        type="supervisor"
-      /> */}
     </div>
   );
 }

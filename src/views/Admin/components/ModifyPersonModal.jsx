@@ -1,52 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, Radio, Tabs } from 'antd';
+import { Modal, Form, Input, Select, Radio, Tabs, message } from 'antd';
 import { weekNumberToCharacter } from '../../../utils';
 import RadioCardGroup from '../../../components/RadioCardGroup';
 import FooterButtonGroup from './FooterButtonGroup';
 import FormGridItem from './FormGridItem';
 
-const { Option } = Select;
-
 export default function CreatePersonModal(props) {
-  const { visible, onSuccess, onCancel, type = 'consult', currentInfo } = props;
-  const roleName = type === 'consult' ? '咨询师' : '督导';
+  const { visible, onFinish, onCancel, type = 'consult', currentInfo } = props;
+  const roleName = type === 'counselor' ? '咨询师' : '督导';
 
-  const [currentWorkingDay, setCurrentWorkingDay] = useState([]);
-  const [candidateList, setCandidateList] = useState([]);
+  const [currentDutyDay, setCurrentDutyDay] = useState([]);
 
   const [form] = Form.useForm();
 
   const handleFinish = () => {
     form.validateFields().then(values => {
-      console.log({ ...values, workingDay: currentWorkingDay });
-      // TODO: 网络请求添加咨询师
-      // onSuccess()
-      // onCancel();
+      console.log({ ...currentInfo, ...values, dutyDayList: currentDutyDay });
+      onFinish(currentInfo.id, type, currentDutyDay, {
+        ...currentInfo,
+        ...values,
+      });
+      onCancel();
     });
   };
 
   useEffect(() => {
-    // TODO: 网络获取待选取督导列表
-    if (type === 'counselor') {
-      setCandidateList(
-        Array.from({ length: 10 }).map((_, index) => ({
-          userId: index,
-          name: `${roleName} ${index}`,
-        }))
-      );
-    }
-  }, [type]);
-
-  useEffect(() => {
-    if (type === 'supervisor') {
-      form.setFieldsValue({
-        name: currentInfo.name,
-        boundSupervisor: currentInfo.boundSupervisor,
-      });
-    } else {
-      form.setFieldsValue({ name: currentInfo.name });
-    }
-    setCurrentWorkingDay(currentInfo.workingDay);
+    form.setFieldsValue({
+      name: currentInfo.name,
+    });
+    setCurrentDutyDay(currentInfo.dutyDayList);
   }, [currentInfo]);
 
   return (
@@ -65,7 +47,7 @@ export default function CreatePersonModal(props) {
         <Form
           colon={false}
           form={form}
-          initialValues={{ workingDay: ['1', '3', '7'], name: '不是' }}
+          initialValues={{ dutyDayList: ['1', '3', '7'], name: '不是' }}
         >
           <div className="flex-1 mb-4">
             <div className="flex gap-4">
@@ -74,21 +56,6 @@ export default function CreatePersonModal(props) {
                 name="name"
                 render={<Input id="newName" placeholder="输入新的姓名" />}
               />
-              {type === 'counselor' && (
-                <FormGridItem
-                  label="绑定督导"
-                  name="boundSupervisor"
-                  render={
-                    <Select mode="multiple" id="modifyBoundSupervisor">
-                      {candidateList.map(candidate => (
-                        <Option key={candidate.userId} value={candidate.userId}>
-                          {candidate.name}
-                        </Option>
-                      ))}
-                    </Select>
-                  }
-                />
-              )}
             </div>
 
             <div className="text-xs text-indigo-theme mt-5 mb-1">
@@ -104,8 +71,8 @@ export default function CreatePersonModal(props) {
               uncheckedClassName="flex items-center justify-center px-4 py-2 bg-gray-300 opacity-50 cursor-pointer"
               checkedClassName="flex items-center justify-center px-4 py-2 bg-indigo-theme text-gray-50 cursor-pointer"
               multiply
-              initialValue={currentWorkingDay}
-              onChange={val => setCurrentWorkingDay(val)}
+              initialValue={currentDutyDay}
+              onChange={val => setCurrentDutyDay(val)}
             />
           </div>
         </Form>

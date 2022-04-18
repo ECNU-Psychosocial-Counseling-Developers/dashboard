@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Table, Form, Input, Rate } from 'antd';
+import { useState, useEffect, useRef } from 'react';
+import { Table, Form, Input, Rate, message } from 'antd';
 import {
   debounce,
   duration,
@@ -9,47 +9,141 @@ import {
 import CreatePersonModal from './components/CreatePersonModal';
 import ModifyPersonModal from './components/ModifyPersonModal';
 import { Role } from '../../enum';
+import service from '../../service';
 
 export default function CounselorManage() {
   const [createPersonModalVisible, setCreatePersonModalVisible] =
     useState(false);
   const [modifyModalVisible, setModifyModalVisible] = useState(false);
   const [tableData, setTableData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
 
-  // TODO: 这里的role 字段正确吗
   const [currentInfo, setCurrentInfo] = useState({
+    avgScore: 0,
+    dutyDayList: [],
+    email: '',
+    id: 0,
+    idCardNum: '',
+    job: '',
     name: '',
-    role: Role.counselor,
-    boundSupervisor: [],
-    counselorSum: 0,
-    duration: 1000,
-    averageRate: 3,
-    workingDay: [1, 2, 5],
+    phone: '',
+    photo: '',
+    role: '',
+    state: '',
+    totalCounseledCount: 0,
+    totalCounseledTime: 0,
+    username: '',
+    workplace: '',
   });
+
+  const getTableData = (pageNumber = 1, pageSize = 10, name) => {
+    service
+      .getCounselorList({
+        pageNumber,
+        pageSize,
+        name,
+      })
+      .then(res => {
+        if (res.data.code !== 200) {
+          message.error('获取失败');
+          return;
+        }
+        console.log(res.data.data);
+        setTableData(res.data.data.counselorList);
+        setTotalCount(res.data.data.totalCount);
+      });
+  };
 
   const handleSearchFromChange = (_, allValues) => {
     const { name } = allValues;
-    console.log(name);
-    // getTableData(1, 3, name, date);
+    getTableData(1, 10, name);
   };
 
-  const handlePageNumberChange = () => {};
+  const handlePageNumberChange = (pageNumber, pageSize) => {
+    getTableData(pageNumber, pageSize);
+  };
 
-  const handleCreateNewCounselor = () => {};
+  const handleCreateNewCounselor = values => {
+    const payload = {
+      username: values.createUsername,
+      password: values.createPassword,
+      name: values.name,
+      phone: values.phoneNumber,
+      email: values.email,
+      workplace: values.department,
+      job: values.title,
+      idCardNum: values.IDNumber,
+    };
+
+    console.log({ payload });
+
+    service.createCounselor(payload).then(res => {
+      if (res.data.code !== 200) {
+        message.error('创建失败');
+      }
+      console.log({ res });
+      getTableData(1, 10);
+      message.success('创建成功');
+    });
+  };
+
+  const handleModifyCounselor = (id, type, dutyDayList, info) => {
+    console.log(info);
+    const {
+      id: counselorId,
+      name,
+      phone,
+      email,
+      desc,
+      photo,
+      workplace,
+      job,
+      idCardNum,
+    } = info;
+    console.log('arrangement payload', {
+      id,
+      arrangeList: dutyDayList.map(dutyDay => ({
+        counselorId: id,
+        dutyDay,
+        role: type === 'counselor' ? Role.counselor : Role.supervisor,
+        startTime: '09:00:00',
+        endTime: '17:00:00',
+      })),
+    });
+    Promise.all([
+      service.modifyCounselor({
+        id: counselorId,
+        name,
+        phone: phone ?? '',
+        email: email ?? '',
+        desc: desc || '',
+        photo: photo || '',
+        workplace: workplace || '',
+        job: job || '',
+        idCardNum: idCardNum || '',
+      }),
+      service.modifyArrangement({
+        id,
+        arrangementList: dutyDayList.map(dutyDay => ({
+          counselorId: id,
+          dutyDay,
+          role: type === 'counselor' ? Role.counselor : Role.supervisor,
+          startTime: '09:00:00',
+          endTime: '17:00:00',
+        })),
+      }),
+    ]).then(([infoRes, arrangementRes]) => {
+      console.log(infoRes.data, arrangementRes.data);
+      if (infoRes.data.code !== 200 || arrangementRes.data.code !== 200) {
+        message.error('修改失败');
+        return;
+      }
+      getTableData(1, 10);
+    });
+  };
 
   useEffect(() => {
-    // TODO: 网络获取数据
-    setTableData(
-      Array.from({ length: 100 }, (_, index) => ({
-        name: `姓名${index}`,
-        role: '咨询师',
-        boundSupervisor: ['督导1', '督导2'],
-        consultSum: 12423,
-        duration: Math.floor(Math.random() * 10000),
-        averageRate: Math.random() * 5 + 1,
-        workingDay: [1, 2, 4, 5],
-      }))
-    );
+    getTableData(1, 10);
   }, []);
 
   const tableColumns = [
@@ -62,40 +156,36 @@ export default function CounselorManage() {
       title: '身份',
       dataIndex: 'role',
       key: 'role',
+      render: role => (role === Role.counselor ? '咨询师' : '管理员'),
     },
     {
-      title: '绑定督导',
-      dataIndex: 'boundSupervisor',
-      key: 'boundSupervisor',
-      render: supervisorList => (
-        <div className="truncate" style={{ maxWidth: 200 }}>
-          {supervisorList.join(', ')}
-        </div>
-      ),
+      title: '用户名',
+      dataIndex: 'username',
+      key: 'username',
     },
     {
       title: '总咨询数',
-      dataIndex: 'consultSum',
-      key: 'consultSum',
+      dataIndex: 'totalCounseledCount',
+      key: 'totalCounseledCount',
     },
     {
       title: '咨询总时长',
-      dataIndex: 'duration',
-      key: 'duration',
+      dataIndex: 'totalCounseledTime',
+      key: 'totalCounseledTime',
       render: seconds => duration(seconds),
     },
     {
       title: '平均咨询评级',
-      dataIndex: 'averageRate',
-      key: 'averageRate',
+      dataIndex: 'avgScore',
+      key: 'avgScore',
       render: rate => (
         <Rate disabled defaultValue={roundSemi(rate)} allowHalf />
       ),
     },
     {
       title: '周值班安排',
-      dataIndex: 'workingDay',
-      key: 'workingDay',
+      dataIndex: 'dutyDayList',
+      key: 'dutyDayList',
       render: dayList =>
         dayList.map(day => `周${weekNumberToCharacter[day]}`).join(', '),
     },
@@ -107,6 +197,7 @@ export default function CounselorManage() {
         <button
           className="px-6 py-2 bg-green-theme text-gray-50 text-xs rounded-sm"
           onClick={() => {
+            // console.log(record);
             setCurrentInfo(record);
             setModifyModalVisible(true);
           }}
@@ -141,13 +232,13 @@ export default function CounselorManage() {
       </div>
       <Table
         className="mt-2"
-        rowKey={record => record.name + record.duration}
+        rowKey={record => record.name + record.duration + Math.random()}
         size="small"
         columns={tableColumns}
         pagination={{
           size: 'default',
           defaultCurrent: 1,
-          total: 100,
+          total: totalCount,
           defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
@@ -167,6 +258,7 @@ export default function CounselorManage() {
         onCancel={() => setModifyModalVisible(false)}
         currentInfo={currentInfo}
         type="counselor"
+        onFinish={handleModifyCounselor}
       />
     </div>
   );

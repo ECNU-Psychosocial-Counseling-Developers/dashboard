@@ -8,37 +8,21 @@ const { Option } = Select;
 
 export default function CreatePersonModal(props) {
   const { visible, onSuccess, onCancel, type = 'consult' } = props;
-  const roleName = type === 'consult' ? '咨询师' : '督导';
+  const roleName = type === 'counselor' ? '咨询师' : '督导';
 
   const [form] = Form.useForm();
 
   const [activeKey, setActiveKey] = useState('person');
-  const [candidateList, setCandidateList] = useState([]);
 
   const handleFinish = () => {
     form.validateFields().then(values => {
-      console.log('new counselor', values);
-      // TODO: 网络请求添加咨询师
-      // onSuccess()
-      onCancel();
+      onSuccess(values);
       setTimeout(() => {
         form.resetFields();
         setActiveKey('person');
       }, 100);
     });
   };
-
-  useEffect(() => {
-    // TODO: 网络获取待选取督导列表
-    if (type === 'counselor') {
-      setCandidateList(
-        Array.from({ length: 10 }).map((_, index) => ({
-          userId: index,
-          name: `${roleName} ${index}`,
-        }))
-      );
-    }
-  }, [type]);
 
   return (
     <Modal
@@ -125,20 +109,6 @@ export default function CreatePersonModal(props) {
                   rules={[{ type: 'email', message: '不是合法的电子邮箱地址' }]}
                 />
               </div>
-              {type === 'counselor' && (
-                <div>
-                  <div className="text-xs text-indigo-theme mb-1">绑定督导</div>
-                  <Form.Item name="boundSupervisor">
-                    <Select mode="multiple" id="createBoundSupervisor">
-                      {candidateList.map(candidate => (
-                        <Option key={candidate.userId} value={candidate.userId}>
-                          {candidate.name}
-                        </Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
-                </div>
-              )}
               <FooterButtonGroup
                 onCancel={onCancel}
                 onOk={() => setActiveKey('work')}
@@ -148,7 +118,7 @@ export default function CreatePersonModal(props) {
               <div className="flex gap-4">
                 <FormGridItem
                   label="用户名"
-                  name="username"
+                  name="createUsername"
                   render={<Input placeholder="请输入用户名" />}
                   rules={[
                     {
@@ -159,7 +129,7 @@ export default function CreatePersonModal(props) {
                 />
                 <FormGridItem
                   label="密码"
-                  name="password"
+                  name="createPassword"
                   render={<Input.Password placeholder="请输入密码" />}
                   rules={[
                     {
@@ -181,30 +151,6 @@ export default function CreatePersonModal(props) {
                   render={<Input placeholder="请输入个人职称" />}
                 />
               </div>
-              {type === 'supervisor' && (
-                <div className="flex gap-4">
-                  <FormGridItem
-                    label="督导资质"
-                    name="qualification"
-                    render={
-                      <Select placeholder="请选择督导资质">
-                        {['初级', '中级', '高级'].map(
-                          (qualification, index) => (
-                            <Option key={index} value={qualification}>
-                              {qualification}
-                            </Option>
-                          )
-                        )}
-                      </Select>
-                    }
-                  />
-                  <FormGridItem
-                    label="资质编号"
-                    name="qualificationNumber"
-                    render={<Input placeholder="请输入资质编号" />}
-                  />
-                </div>
-              )}
               <FooterButtonGroup onCancel={onCancel} onOk={handleFinish} />
             </TabPane>
           </Tabs>

@@ -59,7 +59,7 @@ function Login() {
       className="h-screen flex justify-center items-center bg-no-repeat bg-cover"
       style={{ backgroundImage: `url(${backgroundUrl})` }}
     >
-      <div className="w-96 -mt-20 py-8 px-12 bg-white rounded-lg">
+      <div className="w-96 -mt-20 py-8 px-12 bg-white rounded-lg bg-opacity-60 backdrop-blur-md">
         <p className="mb-8 text-center font-bold text-xl">
           社会心理服务热线平台
         </p>

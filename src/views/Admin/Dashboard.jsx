@@ -285,7 +285,7 @@ export default function Dashboard() {
             </div>
             <div
               className="grid grid-cols-3 border-t overflow-auto"
-              style={{ height: 40 * 4 }}
+              style={{ maxHeight: 40 * 4 }}
             >
               {onlineCounselorList.map((counselor, index) => (
                 <BusyInfoItem

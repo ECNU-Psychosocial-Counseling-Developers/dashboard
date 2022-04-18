@@ -1,45 +1,141 @@
 import { useState, useEffect } from 'react';
-import { Table, Form, Input } from 'antd';
+import { Table, Form, Input, message } from 'antd';
 import { debounce, duration, weekNumberToCharacter } from '../../utils';
 import CreatePersonModal from './components/CreatePersonModal';
 import ModifyPersonModal from './components/ModifyPersonModal';
+import service from '../../service';
+import { Role } from '../../enum';
 
 export default function CounselorManage() {
   const [createPersonModalVisible, setCreatePersonModalVisible] =
     useState(false);
   const [modifyModalVisible, setModifyModalVisible] = useState(false);
   const [tableData, setTableData] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [currentInfo, setCurrentInfo] = useState({
+    avgScore: 0,
+    dutyDayList: [],
+    email: '',
+    id: 0,
+    idCardNum: '',
+    job: '',
     name: '',
-    role: 'supervisor',
-    boundCounselor: [],
-    supervisorSum: 0,
-    duration: 1000,
-    workingDay: [1, 2, 5],
+    phone: '',
+    photo: '',
+    role: '',
+    state: '',
+    totalCounseledCount: 0,
+    totalCounseledTime: 0,
+    username: '',
+    workplace: '',
   });
+
+  const getTableData = (pageNumber = 1, pageSize = 10, name) => {
+    service
+      .getSupervisorList({
+        pageNumber,
+        pageSize,
+        name,
+      })
+      .then(res => {
+        if (res.data.code !== 200) {
+          message.error('获取失败');
+          return;
+        }
+        console.log('supervisor page', res.data.data.counselorList);
+        setTableData(res.data.data.counselorList);
+        setTotalCount(res.data.data.totalCount);
+      });
+  };
 
   const handleSearchFromChange = (_, allValues) => {
     const { searchName } = allValues;
-    console.log(searchName);
-    // getTableData(1, 3, name, date);
+    getTableData(1, 10, searchName);
   };
 
-  const handlePageNumberChange = () => {};
+  const handlePageNumberChange = (pageNumber, pageSize) => {
+    getTableData(pageNumber, pageSize);
+  };
 
-  const handleCreateNewCounselor = () => {};
+  const handleCreateNewSupervisor = values => {
+    const payload = {
+      username: values.createUsername,
+      password: values.createPassword,
+      name: values.name,
+      phone: values.phoneNumber,
+      email: values.email,
+      workplace: values.department,
+      job: values.title,
+      idCardNum: values.IDNumber,
+    };
+    service.createSupervisor(payload).then(res => {
+      if (res.data.code !== 200) {
+        message.error('创建失败');
+      }
+      console.log({ res });
+      getTableData(1, 10);
+      message.success('创建成功');
+      setCreatePersonModalVisible(false);
+    });
+  };
+
+  const handleModifySupervisor = (id, type, dutyDayList, info) => {
+    console.log(info);
+    const {
+      id: counselorId,
+      name,
+      phone,
+      email,
+      desc,
+      photo,
+      workplace,
+      job,
+      idCardNum,
+    } = info;
+    console.log('arrangement payload', {
+      id,
+      arrangeList: dutyDayList.map(dutyDay => ({
+        counselorId: id,
+        dutyDay,
+        role: type === 'counselor' ? Role.counselor : Role.supervisor,
+        startTime: '09:00:00',
+        endTime: '17:00:00',
+      })),
+    });
+    Promise.all([
+      service.modifyCounselor({
+        id: counselorId,
+        name,
+        phone: phone ?? '',
+        email: email ?? '',
+        desc: desc || '',
+        photo: photo || '',
+        workplace: workplace || '',
+        job: job || '',
+        idCardNum: idCardNum || '',
+      }),
+      service.modifyArrangement({
+        id,
+        arrangementList: dutyDayList.map(dutyDay => ({
+          counselorId: id,
+          dutyDay,
+          role: type === 'counselor' ? Role.counselor : Role.supervisor,
+          startTime: '09:00:00',
+          endTime: '17:00:00',
+        })),
+      }),
+    ]).then(([infoRes, arrangementRes]) => {
+      console.log(infoRes.data, arrangementRes.data);
+      if (infoRes.data.code !== 200 || arrangementRes.data.code !== 200) {
+        message.error('修改失败');
+        return;
+      }
+      getTableData(1, 10);
+    });
+  };
 
   useEffect(() => {
-    // TODO: 网络获取数据
-    setTableData(
-      Array.from({ length: 10 }, (_, index) => ({
-        name: `督导 ${index}`,
-        role: '督导',
-        boundCounselor: ['咨询师 1', '咨询师 2'],
-        supervisorSum: 12423,
-        duration: Math.floor(Math.random() * 10000),
-        workingDay: [2, 4, 7],
-      }))
-    );
+    getTableData(1, 10);
   }, []);
 
   const tableColumns = [
@@ -52,32 +148,28 @@ export default function CounselorManage() {
       title: '身份',
       dataIndex: 'role',
       key: 'role',
+      render: role => (role === Role.supervisor ? '督导' : '非督导'),
     },
     {
-      title: '绑定咨询师',
-      dataIndex: 'boundCounselor',
-      key: 'boundCounselor',
-      render: counselorList => (
-        <div className="truncate" style={{ maxWidth: 200 }}>
-          {counselorList.join(', ')}
-        </div>
-      ),
+      title: '用户名',
+      dataIndex: 'username',
+      key: 'username',
     },
     {
       title: '总督导次数',
-      dataIndex: 'supervisorSum',
-      key: 'supervisorSum',
+      dataIndex: 'totalCounseledCount',
+      key: 'totalCounseledCount',
     },
     {
       title: '督导总时长',
-      dataIndex: 'duration',
-      key: 'duration',
+      dataIndex: 'totalCounseledTime',
+      key: 'totalCounseledTime',
       render: seconds => duration(seconds),
     },
     {
       title: '周值班安排',
-      dataIndex: 'workingDay',
-      key: 'workingDay',
+      dataIndex: 'dutyDayList',
+      key: 'dutyDayList',
       render: dayList =>
         dayList.map(day => `周${weekNumberToCharacter[day]}`).join(', '),
     },
@@ -129,7 +221,7 @@ export default function CounselorManage() {
         pagination={{
           size: 'default',
           defaultCurrent: 1,
-          total: 100,
+          total: totalCount,
           defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
@@ -140,7 +232,7 @@ export default function CounselorManage() {
       <CreatePersonModal
         visible={createPersonModalVisible}
         onCancel={() => setCreatePersonModalVisible(false)}
-        onSuccess={handleCreateNewCounselor}
+        onSuccess={handleCreateNewSupervisor}
         type="supervisor"
       />
 
@@ -149,6 +241,7 @@ export default function CounselorManage() {
         onCancel={() => setModifyModalVisible(false)}
         currentInfo={currentInfo}
         type="supervisor"
+        onFinish={handleModifySupervisor}
       />
     </div>
   );

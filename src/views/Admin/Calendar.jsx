@@ -131,7 +131,7 @@ export default function Calendar() {
   };
 
   const updateSidebar = () => {
-    const dutyDay = dayjs().day() === 0 ? 7 : dayjs().day();
+    const dutyDay = dayjs(activeDate).day() === 0 ? 7 : dayjs().day();
     Promise.all([
       service.getOnDutyCounselor(dutyDay),
       service.getOnDutySupervisor(dutyDay),
@@ -145,7 +145,7 @@ export default function Calendar() {
 
   const handleAddPerson = payload => {
     const { counselorId, dutyDay, role, startTime, endTime } = payload;
-    return service
+    service
       .createArrangement(counselorId, dutyDay, role, startTime, endTime)
       .then(res => {
         if (res.data.code !== 200) {
@@ -153,15 +153,15 @@ export default function Calendar() {
         }
         message.success('添加成功');
         updateCalendar();
+        updateSidebar();
         setAddPersonModalVisible(false);
       });
   };
 
   const handleDeletePerson = (person, date) => {
-    const dutyDay = dayjs().date(date).day();
+    const dutyDay = dayjs().date(date).day() ? dayjs().date(date).day() : 7;
     // TODO: http delete person, update peopleList
     const deleteArrangement = () => {
-      console.log('delete', person);
       service.deleteArrangement(dutyDay, person.id).then(res => {
         if (res.data.code !== 200) {
           message.error('删除失败');

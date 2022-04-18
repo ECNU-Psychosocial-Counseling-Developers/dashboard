@@ -203,4 +203,69 @@ service.createArrangement = (
   });
 };
 
+/**
+ * 修改用户排班
+ */
+service.modifyArrangement = payload => {
+  return axios.post('/arrangement/modify', payload);
+};
+
+/**
+ * 分页获取咨询师信息
+ * @param {{ pageSize: number; pageNumber: number; name?: string; }} params
+ */
+service.getCounselorList = params => {
+  return axios.get('/counselor/query', { params });
+};
+
+/**
+ * 分页获取督导信息
+ * @param {{ pageSize: number; pageNumber: number; name?: string; }} params
+ */
+service.getSupervisorList = params => {
+  return axios.get('/supervisor/query', { params });
+};
+
+/**
+ * 创建咨询师
+ */
+service.createCounselor = payload => {
+  return axios.post('/counselor/create', payload);
+};
+
+/**
+ * 修改咨询师信息
+ */
+service.modifyCounselor = payload => {
+  return axios.post('/counselor/modify', payload);
+};
+
+/**
+ * 创建督导
+ */
+service.createSupervisor = payload => {
+  return axios.post('/supervisor/create', payload);
+};
+
+/**
+ * 分页获取用户信息
+ */
+service.getCustomerList = params => {
+  return axios.get('/customer/query', { params });
+};
+
+/**
+ * 拉黑用户
+ */
+service.blackCustomer = userId => {
+  return axios.post(`/customer/black/on/${userId}`);
+};
+
+/**
+ * 解除拉黑用户
+ */
+service.unblackCustomer = userId => {
+  return axios.post(`/customer/black/off/${userId}`);
+};
+
 export default service;
