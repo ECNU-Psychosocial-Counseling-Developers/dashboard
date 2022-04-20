@@ -68,10 +68,9 @@ export default function Dashboard() {
     service
       .getOnDutyCounselor(dayjs().day() === 0 ? 7 : dayjs().day())
       .then(res => {
-        setOnlineCounselorList(res.data.data);
+        setOnlineCounselorList(res.data.data.counselorList);
         // TODO: 为了展示效果加了一些数据
         // setOnlineCounselorList(new Array(20).fill(res.data.data[0]));
-        console.log({ 'current online counselor list': res });
       });
     Promise.all([
       service.getTodayConsultStat(user.userId),
@@ -86,11 +85,11 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="m-3.5 space-y-2">
+    <div className="relative m-3.5 space-y-2">
       {/* top info */}
       <div className="flex gap-3" style={{ maxHeight: 600 }}>
         {/* left info */}
-        <div className="flex-1 space-y-2">
+        <div className="flex-1 flex flex-col space-y-2">
           <div className="flex gap-3">
             <div className="flex gap-3 p-4 bg-white">
               <img
@@ -117,14 +116,14 @@ export default function Dashboard() {
               />
             </div>
           </div>
-          <div className="flex bg-white">
+          <div className="flex-1 flex bg-white">
             <div className="flex-1">
               <div className="flex items-center justify-between p-2">
                 <div>今日值班咨询师</div>
               </div>
               <div
                 className="grid grid-cols-3 border-t overflow-auto"
-                style={{ height: 160 }}
+                style={{ maxHeight: 160 }}
               >
                 {onlineCounselorList.map((consult, index) => (
                   <div
@@ -148,7 +147,10 @@ export default function Dashboard() {
         </div>
 
         {/* right calendar */}
-        <div className="flex flex-col px-6 py-4 w-5/12 bg-white">
+        <div
+          className="flex flex-col px-6 py-4 w-5/12 bg-white"
+          style={{ minHeight: 345 }}
+        >
           <div>
             <div className="flex items-center space-x-2">
               <p className="text-lg font-bold text-gray-600">

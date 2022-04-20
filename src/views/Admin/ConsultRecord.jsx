@@ -53,7 +53,7 @@ export default function ConsultRecord() {
   }, []);
 
   return (
-    <div className="m-4">
+    <div className="relative m-4">
       <Form
         layout="inline"
         colon={false}

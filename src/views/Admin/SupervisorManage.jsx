@@ -5,8 +5,11 @@ import CreatePersonModal from './components/CreatePersonModal';
 import ModifyPersonModal from './components/ModifyPersonModal';
 import service from '../../service';
 import { Role } from '../../enum';
+import { useSelector } from 'react-redux';
 
-export default function CounselorManage() {
+export default function SupervisorManage() {
+  const user = useSelector(state => state.user);
+
   const [createPersonModalVisible, setCreatePersonModalVisible] =
     useState(false);
   const [modifyModalVisible, setModifyModalVisible] = useState(false);
@@ -90,7 +93,7 @@ export default function CounselorManage() {
       idCardNum,
     } = info;
     Promise.all([
-      service.modifyCounselor({
+      service.modifyCounselor(user.role, {
         id: counselorId,
         name,
         phone: phone ?? '',

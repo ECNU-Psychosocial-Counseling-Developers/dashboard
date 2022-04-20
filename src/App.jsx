@@ -6,6 +6,7 @@ import Login from './views/Login';
 import Home from './views/Home';
 import CounselorDashboard from './views/Counselor/Dashboard';
 import CounselorRecord from './views/Counselor/Record';
+import CounselorAppointment from './views/Counselor/Appointment';
 import CounselorConversation from './views/Conversation/CounselorConversation';
 import SupervisorDashboard from './views/Supervisor/Dashboard';
 import SupervisorConsultRecord from './views/Supervisor/ConsultRecord';
@@ -39,6 +40,7 @@ function App() {
           {user.role === Role.counselor && (
             <>
               <Route index element={<CounselorDashboard />} />
+              <Route path="appointment" element={<CounselorAppointment />} />
               <Route path="record" element={<CounselorRecord />} />
             </>
           )}

@@ -63,7 +63,7 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="m-4">
+    <div className="relative m-4">
       {/* Top */}
       <div className="flex items-stretch mb-4">
         <div className="flex-1 flex flex-col">

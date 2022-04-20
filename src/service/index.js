@@ -34,12 +34,33 @@ service.login = (username, password) => {
 };
 
 /**
+ * 获取咨询师信息
+ */
+service.getCounselorInfo = counselorId => {
+  return axios.get('/counselor/info/' + counselorId);
+};
+
+/**
+ * 获取督导信息
+ */
+service.getSupervisorInfo = supervisorId => {
+  return axios.get('/supervisor/info/' + supervisorId);
+};
+
+/**
  * 咨询师查询咨询记录
  * @param {{ pageSize: number; pageNumber: number; id: string, name?: string; date?: number }} params
  * @returns
  */
 service.getCounselorRecord = params => {
   return axios.get('/consult/record/counseled', { params });
+};
+
+/**
+ * 根据咨询 ID 查询咨询消息记录
+ */
+service.getConsultMessageList = consultId => {
+  return axios.get('/msg/record/query', { params: { consultId } });
 };
 
 /**
@@ -52,12 +73,8 @@ service.getConsultInfo = consultId => {
 /**
  * 获取预约记录
  */
-service.getAppointmentList = counselorId => {
-  return axios
-    .get('/appointment/counselor/' + counselorId)
-    .then(res => res.data)
-    .then(list => axios.get())
-    .then(res => res.data);
+service.getAppointmentList = (counselorId, params) => {
+  return axios.get(`/appointment/counselor/${counselorId}`, { params });
 };
 
 /**
@@ -234,10 +251,14 @@ service.createCounselor = payload => {
 };
 
 /**
- * 修改咨询师信息
+ * 修改咨询师或督导信息
  */
-service.modifyCounselor = payload => {
-  return axios.post('/counselor/modify', payload);
+service.modifyCounselor = (role, payload) => {
+  if (role === Role.counselor) {
+    return axios.post('/counselor/modify', payload);
+  } else {
+    return axios.post('/supervisor/modify', payload);
+  }
 };
 
 /**
@@ -266,6 +287,20 @@ service.blackCustomer = userId => {
  */
 service.unblackCustomer = userId => {
   return axios.post(`/customer/black/off/${userId}`);
+};
+
+/**
+ * 上传图片
+ */
+service.uploadImage = file => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return axios({
+    url: '/file/upload',
+    method: 'POST',
+    headers: { 'content-type': 'multipart/form-data' },
+    data: formData,
+  });
 };
 
 export default service;

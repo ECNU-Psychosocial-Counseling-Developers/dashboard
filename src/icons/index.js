@@ -1,19 +1,10 @@
-import IconDone from './IconDone';
-import IconEmoji from './IconEmoji';
-import IconLogout from './IconLogout';
-import IconQuestion from './IconQuestion';
-import IconCross from './IconCross';
-import IconExport from './IconExport';
-import IconShakeHand from './IconShakeHand';
-import IconCalendarEdit from './IconCalendarEdit';
-
-export {
-  IconDone,
-  IconEmoji,
-  IconLogout,
-  IconQuestion,
-  IconCross,
-  IconExport,
-  IconShakeHand,
-  IconCalendarEdit,
-};
+export { default as IconDone } from './IconDone';
+export { default as IconEmoji } from './IconEmoji';
+export { default as IconLogout } from './IconLogout';
+export { default as IconQuestion } from './IconQuestion';
+export { default as IconCross } from './IconCross';
+export { default as IconExport } from './IconExport';
+export { default as IconShakeHand } from './IconShakeHand';
+export { default as IconCalendarEdit } from './IconCalendarEdit';
+export { default as IconAppointment } from './IconAppointment';
+export { default as IconReturn } from './IconReturn';

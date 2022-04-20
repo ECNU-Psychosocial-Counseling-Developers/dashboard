@@ -46,6 +46,7 @@ function Login() {
           console.log('TIM login, userId = %s', userInfo.userId);
           login(userInfo.userId.toString());
         }
+        console.log({ data });
         navigate('/');
       })
       .catch(err => {

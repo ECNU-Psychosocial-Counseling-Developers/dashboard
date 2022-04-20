@@ -46,7 +46,7 @@ export default function Record() {
   }, []);
 
   return (
-    <div className="m-4">
+    <div className="relative m-4">
       <Form
         layout="inline"
         colon={false}

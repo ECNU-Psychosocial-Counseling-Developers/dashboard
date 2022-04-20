@@ -45,7 +45,11 @@ async function saveFileToFileSystem(content, suggestedName) {
     suggestedName,
     types: [
       {
-        description: 'Text Files',
+        description: 'JSON File',
+        accept: { 'application/json': ['.json'] },
+      },
+      {
+        description: 'Text File',
         accept: { 'text/plain': ['.txt'] },
       },
     ],
@@ -119,13 +123,15 @@ function UserResToUserInfo(data) {
  */
 function consultResponseToTableRow(res) {
   return res.data.data.consultVOList.map(item => {
-    const { counselId, startTime, endTime, score, comment, counselName } = item;
+    const { counselId, id, startTime, endTime, score, comment, counselName } =
+      item;
     return {
       consumer: counselName,
       duration: Math.floor((endTime - startTime) / 1000),
       date: startTime,
       comment,
       score,
+      consultId: id,
     };
   });
 }

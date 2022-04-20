@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Avatar } from 'antd';
+import { Avatar, message } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   UserOutlined,
@@ -9,15 +9,18 @@ import {
   ProfileOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import { IconShakeHand } from '../icons';
-import { useSelector } from 'react-redux';
+import { IconAppointment, IconShakeHand } from '../icons';
+import { useDispatch, useSelector } from 'react-redux';
 import { IconCross } from '../icons';
 import { setMessageRead, deleteConversation } from '../im';
 import { Role } from '../enum';
+import service from '../service';
+import { UserResToUserInfo } from '../utils';
 
 const userToLink = {
   [Role.counselor]: [
     { label: '首页', link: '', icon: <HomeOutlined /> },
+    { label: '预约记录', link: 'appointment', icon: <IconAppointment /> },
     { label: '咨询记录', link: 'record', icon: <FileTextOutlined /> },
   ],
   [Role.supervisor]: [
@@ -191,13 +194,101 @@ function ChatMenu({ navigate }) {
 
 function SideBar() {
   const user = useSelector(state => state.user);
+  const dispatch = useDispatch();
 
   const navigate = useNavigate();
+
+  const updateUserInfo = avatarUrl => {
+    if (user.role === Role.counselor) {
+      service
+        .getCounselorInfo(user.userId)
+        .then(res => {
+          if (res.data.code !== 200) {
+            return;
+          }
+          return res.data.data;
+        })
+        .then(userInfo => {
+          const nextUserInfo = {
+            ...userInfo,
+            photo: avatarUrl,
+          };
+          return Promise.all([
+            nextUserInfo,
+            service.modifyCounselor(user.role, nextUserInfo),
+          ]);
+        })
+        .then(([userInfo, res]) => {
+          if (res.data.code !== 200) {
+            return;
+          }
+          dispatch({
+            type: 'user/update',
+            payload: UserResToUserInfo(userInfo),
+          });
+        });
+    } else if (user.role === Role.supervisor) {
+      service
+        .getSupervisorInfo(user.userId)
+        .then(res => {
+          if (res.data.code !== 200) {
+            return;
+          }
+          return res.data.data;
+        })
+        .then(userInfo => {
+          const nextUserInfo = {
+            ...userInfo,
+            photo: avatarUrl,
+          };
+          return Promise.all([
+            nextUserInfo,
+            service.modifyCounselor(user.role, nextUserInfo),
+          ]);
+        })
+        .then(([userInfo, res]) => {
+          if (res.data.code !== 200) {
+            return;
+          }
+          dispatch({
+            type: 'user/update',
+            payload: UserResToUserInfo(userInfo),
+          });
+        });
+    } else {
+      message.info('仅咨询师和督导支持头像修改');
+    }
+  };
+
+  const handleUploadAvatar = e => {
+    const avatarFile = e.target.files[0];
+    service.uploadImage(avatarFile).then(res => {
+      if (res.data.code !== 200) {
+        message.error('头像上传失败');
+      }
+      const avatarUrl = res.data.data;
+      updateUserInfo(avatarUrl);
+    });
+  };
+
+  console.log('side bar', user);
 
   return (
     <aside className="w-48 flex-shrink-0 text-white bg-indigo-theme">
       <div className="flex justify-center items-center space-x-3 mt-5 mb-6">
-        <Avatar size={64} src="https://placekitten.com/g/300/300" />
+        <input
+          className="hidden"
+          type="file"
+          name="avatar-input"
+          id="avatar-upload"
+          onChange={handleUploadAvatar}
+        />
+        <label htmlFor="avatar-upload" className={'cursor-pointer'}>
+          <Avatar
+            size={64}
+            src={user.avatarUrl || 'https://placekitten.com/g/300/300'}
+          />
+        </label>
         <p className="text-gray-50">欢迎，{user.name ?? '管理员'}</p>
       </div>
       <NavMenu user={user} navigate={navigate} />

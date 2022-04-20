@@ -56,7 +56,7 @@ export default function AskRecord() {
   }, []);
 
   return (
-    <div className="m-4">
+    <div className="relative m-4">
       <div className="flex justify-between items-end">
         <Form
           layout="inline"

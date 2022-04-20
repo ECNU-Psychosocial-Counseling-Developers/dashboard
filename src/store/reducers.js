@@ -49,6 +49,8 @@ function reducer(state = defaultState, action) {
   switch (action.type) {
     case 'user/login':
       return loginReducer(state, action);
+    case 'user/update':
+      return loginReducer(state, action);
     case 'user/logout':
       return logoutReducer(state, action);
     case 'conversation/get':
