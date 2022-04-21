@@ -33,6 +33,16 @@ function replaceEmojiTextToUrl(text) {
           draggable={false}
         />
       );
+    } else if (content.startsWith('http')) {
+      renderResult.push(
+        <img
+          className="m-0"
+          style={{ maxWidth: 300 }}
+          key={startIndex}
+          src={content}
+          alt="图片"
+        />
+      );
     } else {
       renderResult.push(`[${content}]`);
     }

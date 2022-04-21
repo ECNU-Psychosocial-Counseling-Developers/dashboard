@@ -81,6 +81,7 @@ export default function ConsultRecord() {
           defaultPageSize: 10,
           showSizeChanger: false,
           onChange: handlePageNumberChange,
+          style: { margin: '4px auto' },
         }}
         dataSource={tableData}
       />

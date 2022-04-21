@@ -83,6 +83,7 @@ export default function CounselorManage() {
       }
       getTableData(1, 10);
       message.success('创建成功');
+      setCreatePersonModalVisible(false);
     });
   };
 

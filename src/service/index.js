@@ -57,13 +57,6 @@ service.getCounselorRecord = params => {
 };
 
 /**
- * 根据咨询 ID 查询咨询消息记录
- */
-service.getConsultMessageList = consultId => {
-  return axios.get('/msg/record/query', { params: { consultId } });
-};
-
-/**
  * 查询一项咨询的信息
  */
 service.getConsultInfo = consultId => {
@@ -276,6 +269,13 @@ service.getCustomerList = params => {
 };
 
 /**
+ * 根据 id 获取客户信息
+ */
+service.getCustomerInfo = userId => {
+  return axios.get(`/customer/info/${userId}`);
+};
+
+/**
  * 拉黑用户
  */
 service.blackCustomer = userId => {
@@ -300,6 +300,56 @@ service.uploadImage = file => {
     method: 'POST',
     headers: { 'content-type': 'multipart/form-data' },
     data: formData,
+  });
+};
+
+/**
+ * 开启会话（咨询师请求督导）
+ * @param {{
+ *  bindConsultId: number;
+ *  counselId: number;
+ *  counseledId: number;
+ *  startTime: number;
+ * }} payload
+ */
+service.createSession = payload => {
+  return axios.post('/consult/session/create', payload);
+};
+
+/**
+ * 结束咨询（consult）或会话（session）
+ * @param {number} consultId
+ */
+service.endConsult = consultId => {
+  axios.post('/consult/end', {
+    consultId,
+    endTime: Date.now(),
+  });
+};
+
+/**
+ * 添加消息
+ * @param {{
+ *  consultId: number;
+ *  consultType: number;
+ *  senderId: number;
+ *  receiverId: number;
+ *  sendTime: number;
+ *  message: string;
+ * }} payload
+ */
+service.appendMessage = payload => {
+  return axios.post('/msg/append', payload);
+};
+
+/**
+ * 获取消息
+ */
+service.getConsultMessage = consultId => {
+  return axios.get('/msg/record/query', {
+    params: {
+      consultId,
+    },
   });
 };
 

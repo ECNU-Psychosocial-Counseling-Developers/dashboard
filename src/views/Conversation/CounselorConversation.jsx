@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { Avatar, Rate } from 'antd';
+import { Avatar, message, Rate } from 'antd';
 import { IconQuestion, IconExport } from '../../icons';
 import CommentModal from './components/CommentModal';
 import SelectSupervisorModal from './components/SelectSupervisorModal';
@@ -15,10 +15,11 @@ import service from '../../service';
 export default function Conversation() {
   const dispatch = useDispatch();
   const conversationList = useSelector(state => state.conversationList);
+  const user = useSelector(state => state.user);
 
   const { userId } = useParams();
 
-  const consultConversationID = sessionStorage.getItem('currentConversationID');
+  const consultConversationID = localStorage.getItem('currentConversationID');
   const supervisorConversationID = localStorage.getItem(consultConversationID);
   const storageSupervisor = localStorage.getItem(
     consultConversationID + '_supervisorInfo'
@@ -32,7 +33,6 @@ export default function Conversation() {
     duration: 0,
     comment: '',
   });
-  const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [askStatus, setAskStatus] = useState({
     asking: !!supervisorConversationID,
     supervisorInfo: storageSupervisor
@@ -64,6 +64,7 @@ export default function Conversation() {
 
   const refreshDuration = () => {
     setConsultStatus(preStatus => {
+      console.log('preStatus', preStatus);
       return {
         ...preStatus,
         duration: Date.now() - preStatus.startTime,
@@ -72,46 +73,48 @@ export default function Conversation() {
   };
 
   const autoRefreshDuration = interval => {
-    refreshDuration();
-    durationTimerRef.current = setInterval(() => {
-      refreshDuration();
-    }, interval);
+    // refreshDuration();
+    // console.log('呃呃呃', interval);
+    // durationTimerRef.current = setInterval(() => {
+    //   console.log('duration');
+    //   refreshDuration();
+    // }, interval);
+    durationTimerRef.current = setInterval(refreshDuration, interval);
+    // console.log('interval duration ref', durationTimerRef.current);
   };
 
-  const pollingIsOver = interval => {
+  const pollingIsFinished = interval => {
     pollingTimerRef.current = setInterval(() => {
-      // TODO: 轮询请求，通过 endTime 是否为空判断是否结束
-      // service.getConsultInfo('14').then(res => {
-      //   const info = res.data.data;
-      //   if (!info.endTime) {
-      //     ...
-      //   }
-      // });
-      const consultRes = {
-        data: {
-          isOver: false,
-          startTime: 1647883247964,
-          score: 0,
-          comment: `挺好的，聊得很开心。我觉得搞得挺不错的。俗话说“子曰：「學而時習之，不亦說乎？有朋自遠方來，不亦樂乎？人不知而不慍，不亦君子乎？”`,
-        },
-      };
-      Promise.resolve(consultRes).then(res => {
-        const { isOver, startTime, score, comment } = res.data;
-        if (isOver) {
-          clearInterval(durationTimerRef.current);
-          clearInterval(pollingTimerRef.current);
-          localStorage.removeItem(consultConversationID);
-          localStorage.removeItem(consultConversationID + '_supervisorInfo');
-          setConsultStatus({
-            isOver,
-            startTime,
-            score,
-            comment,
-            duration: Date.now() - startTime,
-          });
-          // setCommentModalVisible(true);
-        }
-      });
+      service
+        .getConsultInfo(Number(localStorage.getItem('message_consultId')))
+        .then(res => {
+          if (res.data.code !== 200) {
+            console.error('Failed to polling isFinished');
+            return;
+          }
+          // console.log('polling is over', res.data.data);
+          const { startTime, endTime, score, comment } = res.data.data;
+          const isFinished = !!endTime;
+          console.log('isFinished', isFinished, durationTimerRef.current);
+          if (isFinished) {
+            console.log(
+              'clear',
+              durationTimerRef.current,
+              pollingTimerRef.current
+            );
+            clearInterval(durationTimerRef.current);
+            clearInterval(pollingTimerRef.current);
+            localStorage.removeItem(consultConversationID);
+            localStorage.removeItem(consultConversationID + '_supervisorInfo');
+            setConsultStatus({
+              isOver: isFinished,
+              startTime,
+              score,
+              comment,
+              duration: endTime ? endTime - startTime : Date.now() - startTime,
+            });
+          }
+        });
     }, interval);
   };
 
@@ -122,39 +125,60 @@ export default function Conversation() {
   const handleAskSuperVisor = val => {
     console.log('handleAskSuperVisor', val);
     setSelectModalVisible(false);
-    // TODO: 获取咨询人信息
-    const res = {
-      data: {
-        name: '弗洛伊德',
-        avatarUrl: 'https://placekitten.com/g/50/50',
-        userId: '10',
-      },
-    };
-    Promise.resolve(res).then(res => {
-      const supervisorInfo = res.data;
-      setAskStatus({
-        asking: true,
-        supervisorInfo,
-      });
-      localStorage.setItem(
-        consultConversationID,
-        'C2C' + supervisorInfo.userId
-      );
-      localStorage.setItem(
-        consultConversationID + '_supervisorInfo',
-        JSON.stringify(res.data)
-      );
+
+    service.getSupervisorInfo(val).then(res => {
+      console.log(res.data.data);
+      const supervisorInfo = res.data.data;
+
+      // 创建新的咨询，后端业务中叫做 session
+      service
+        .createSession({
+          bindConsultId: Number(localStorage.getItem('message_consultId')),
+          counselId: Number(user.userId),
+          counseledId: Number(val),
+          startTime: Date.now(),
+        })
+        .then(res => {
+          if (res.data.code !== 200) {
+            return;
+          }
+          localStorage.setItem('message_sessionId', res.data.data);
+
+          setAskStatus({
+            asking: true,
+            supervisorInfo,
+          });
+
+          console.log('localStorage setItem supervisorInfo', {
+            supervisorInfo,
+          });
+          console.log(
+            'set item',
+            consultConversationID,
+            'C2C' + supervisorInfo.id
+          );
+          localStorage.setItem(
+            consultConversationID,
+            'C2C' + supervisorInfo.id
+          );
+          localStorage.setItem(
+            consultConversationID + '_supervisorInfo',
+            JSON.stringify(supervisorInfo)
+          );
+        });
     });
   };
 
   const handleExportRecord = () => {
-    // TODO: 网络获取聊天信息、用户评价等信息
-    saveFileToFileSystem('这是一个记录', '咨询记录');
-  };
-
-  const submitComment = values => {
-    console.log('submit comment', values);
-    setCommentModalVisible(false);
+    service
+      .getConsultMessage(Number(localStorage.getItem('message_consultId')))
+      .then(res => {
+        if (res.data.code !== 200) {
+          message.error('获取历史信息失败');
+          return;
+        }
+        saveFileToFileSystem(JSON.stringify(res.data.data), '咨询记录');
+      });
   };
 
   const refreshMessage = (conversationID, setMessages, conversationRef) => {
@@ -189,16 +213,69 @@ export default function Conversation() {
     conversationID,
     setNextMessageID,
     setMessages,
-    conversationRef
+    conversationRef,
+    type = 'consult'
   ) => {
-    console.log('conversationID', conversationID);
+    console.log('getInitMessages conversationID', conversationID, type);
     getMessageList({ conversationID }).then(res => {
       const messageList = res.data.messageList;
+      console.log('messageList', messageList);
+      if (type === 'consult') {
+        for (let i = messageList.length - 1; i >= 0; i--) {
+          if (messageList[i].cloudCustomData) {
+            console.log('GET CUSTOM DATA: ', messageList[i].cloudCustomData);
+            localStorage.setItem(
+              'message_consultId',
+              messageList[i].cloudCustomData
+            );
+            break;
+          }
+        }
+
+        Promise.all([
+          service.getCustomerInfo(userId),
+          // TODO: 待验证
+          service.getConsultInfo(
+            Number(localStorage.getItem('message_consultId'))
+          ),
+        ]).then(([customerRes, consultRes]) => {
+          console.log('get init message', customerRes, consultRes);
+          if (customerRes.data.code !== 200 || consultRes.data.code !== 200) {
+            message.error('获取信息失败');
+            console.error('Failed to get init consult info');
+            return;
+          }
+          const customerInfo = {
+            ...customerRes.data.data,
+            photo:
+              customerRes.data.data.photo || 'https://placekitten.com/100/100',
+          };
+
+          console.log('获取初始信息', consultRes.data.data);
+
+          const { startTime, endTime, score, comment } = consultRes.data.data;
+
+          setChatPersonInfo(customerInfo);
+          const isOver = !!endTime;
+          setConsultStatus({
+            isOver,
+            startTime,
+            score,
+            comment,
+            duration: endTime ? endTime - startTime : Date.now() - startTime,
+          });
+          console.log('over 了 吗？', isOver);
+          if (!isOver) {
+            autoRefreshDuration(1000);
+            pollingIsFinished(3000);
+          }
+        });
+      }
       flushSync(() => {
         setNextMessageID(res.data.isCompleted ? '' : res.data.nextReqMessageID);
         setMessages(messageList);
       });
-      conversationRef.current.lastChild.scrollIntoView();
+      conversationRef.current.lastChild?.scrollIntoView();
     });
   };
 
@@ -206,6 +283,8 @@ export default function Conversation() {
     setAskStatus({
       asking: false,
     });
+    // 发起结束求助请求
+    service.endConsult(Number(localStorage.getItem('message_sessionId')));
     localStorage.removeItem(consultConversationID);
     localStorage.removeItem(consultConversationID + '_supervisorInfo');
   };
@@ -219,56 +298,32 @@ export default function Conversation() {
       consultConversationID,
       setConsultNextMessageID,
       setConsultMessages,
-      consultConversationRef
+      consultConversationRef,
+      'consult'
     );
     if (supervisorConversationID && askStatus.asking) {
+      console.log('supervisor conversation on', supervisorConversationID);
       getInitMessages(
         supervisorConversationID,
         setSupervisorNextMessageID,
-        setSupervisorNextMessageID,
-        supervisorConversationRef
+        setSupervisorMessages,
+        supervisorConversationRef,
+        'session'
       );
     }
-    // TODO: 通过 userID 获取当前聊天对象的信息
-    const infoRes = {
-      data: {
-        name: userId,
-        phoneNumber: '133****4322',
-        avatarUrl: 'https://placekitten.com/g/100/100',
-      },
-    };
-    // 切换会话窗口的时候也需要咨询的开始时间、是否已结束、评价等信息
-    const consultRes = {
-      data: {
-        isOver: false,
-        startTime: 1647883247964,
-        score: 0,
-        comment: `挺好的，聊得很开心。我觉得搞得挺不错的。俗话说“子曰：「學而時習之，不亦說乎？有朋自遠方來，不亦樂乎？人不知而不慍，不亦君子乎？”`,
-      },
-    };
-    // TODO:
-    Promise.all([Promise.resolve(infoRes), Promise.resolve(consultRes)])
-      .then(([{ data: infoData }, { data: consultData }]) => {
-        const { isOver, startTime, score, comment } = consultData;
-        setChatPersonInfo(infoData);
-        setConsultStatus({
-          isOver,
-          startTime,
-          score,
-          comment,
-          duration: Date.now() - startTime,
-        });
-        if (!isOver) {
-          autoRefreshDuration(1000);
-          pollingIsOver(3000);
-        }
-      })
-      .catch(err => console.error(err));
+
     return () => {
       clearInterval(durationTimerRef.current);
-      clearInterval(pollingIsOver.current);
+      clearInterval(pollingIsFinished.current);
     };
   }, [userId]);
+
+  useEffect(() => {
+    return () => {
+      clearInterval(durationTimerRef.current);
+      clearInterval(pollingIsFinished.current);
+    };
+  }, []);
 
   // 收到新的消息时会更新全局 conversationList，若当前会话有未读消息则重新获取聊天信息，并标记已读
   // 标记已读之后重新更新 conversationList，消除侧边栏上的未读计数
@@ -308,10 +363,10 @@ export default function Conversation() {
         <div className="flex items-center gap-4">
           {!!chatPersonInfo && (
             <>
-              <Avatar src={chatPersonInfo.avatarUrl} size={60} />
+              <Avatar src={chatPersonInfo.photo} size={60} />
               <div className="space-y-2">
                 <p className="text-base">{chatPersonInfo.name}</p>
-                <p className="text-xs">{chatPersonInfo.phoneNumber}</p>
+                <p className="text-xs">{chatPersonInfo.phone}</p>
               </div>
             </>
           )}
@@ -394,13 +449,6 @@ export default function Conversation() {
           onFinish={handleFinishAsk}
         />
       )}
-
-      {/* 结束评价弹窗 评价是用户单方的 */}
-      {/* <CommentModal
-        visible={commentModalVisible}
-        onCancel={() => setCommentModalVisible(false)}
-        onSubmit={submitComment}
-      /> */}
 
       {/* 选择咨询师弹窗 */}
       <SelectSupervisorModal

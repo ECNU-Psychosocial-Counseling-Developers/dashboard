@@ -1,4 +1,5 @@
 import { logout } from '../im';
+import { Role } from '../enum';
 
 const defaultState = {
   user: localStorage.getItem('userInfo')
@@ -6,8 +7,8 @@ const defaultState = {
     : {
         name: '咨询师',
         username: 'zixunshi',
-        userId: '1',
-        role: 'ROLE_COUNSELOR',
+        userId: '',
+        role: Role.counselor,
         avatarUrl: 'http://localhost:4000/src/assets/photo.webp',
       },
   conversationList: [],
@@ -23,7 +24,13 @@ function loginReducer(state, action) {
 
 function logoutReducer(state, action) {
   localStorage.removeItem('userInfo');
+  const consultConversationID = localStorage.getItem('currentConversationID');
+  localStorage.removeItem('currentConversationID');
+  localStorage.removeItem(consultConversationID);
+  localStorage.removeItem(consultConversationID + '_supervisorInfo');
+
   logout();
+
   return {
     ...state,
     user: {

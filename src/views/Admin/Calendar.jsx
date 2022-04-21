@@ -76,7 +76,8 @@ export default function Calendar() {
         element.classList.contains('calendar-container') ||
         element.classList.contains('calendar-sidebar') ||
         element.classList.contains('ant-modal-root') ||
-        element.classList.contains('ant-select-dropdown')
+        element.classList.contains('ant-select-dropdown') ||
+        element.classList.contains('ant-picker-dropdown')
       ) {
         return;
       }
@@ -160,7 +161,6 @@ export default function Calendar() {
 
   const handleDeletePerson = (person, date) => {
     const dutyDay = dayjs().date(date).day() ? dayjs().date(date).day() : 7;
-    // TODO: http delete person, update peopleList
     const deleteArrangement = () => {
       service.deleteArrangement(dutyDay, person.id).then(res => {
         if (res.data.code !== 200) {

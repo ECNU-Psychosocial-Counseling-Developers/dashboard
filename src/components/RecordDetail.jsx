@@ -70,6 +70,8 @@ export default function RecordDetail(props) {
   const { status, handleReturn } = props;
   const { visible, consultId } = status;
 
+  console.log('status', { status });
+
   const [recordDetail, setRecordDetail] = useState(initialRecordDetail);
 
   const handleExportRecord = messageList => {
@@ -82,7 +84,7 @@ export default function RecordDetail(props) {
     }
     Promise.all([
       service.getConsultInfo(consultId),
-      service.getConsultMessageList(consultId),
+      service.getConsultMessage(consultId),
     ])
       .then(([infoRes, messageRes]) => {
         if (infoRes.data.code !== 200 || messageRes.data.code !== 200) {
@@ -104,6 +106,7 @@ export default function RecordDetail(props) {
         return Promise.all([consultInfo, messageInfo, null]);
       })
       .then(([consultInfo, messageInfo, sessionRes]) => {
+        console.log('record detail', consultInfo, messageInfo, sessionRes);
         let supervisorId = -1;
         if (sessionRes && sessionRes.data.code === 200) {
           supervisorId = sessionRes.data.data.counseledId;
@@ -112,9 +115,10 @@ export default function RecordDetail(props) {
           visible: true,
           score: consultInfo.score || 0,
           comment: consultInfo.score || '默认评价',
-          // TODO: startTime endTime 是假的，假数据不完善
-          // duration: duration((consultInfo.endTime - consultInfo.startTime) / 1000),
-          duration: duration(1234),
+          duration: duration(
+            (consultInfo.endTime - consultInfo.startTime) / 1000 || 0
+          ),
+          // duration: duration(1234),
           customer: {
             id: consultInfo.counselId,
             name: messageInfo.customerName || '咨询师',
@@ -174,7 +178,7 @@ export default function RecordDetail(props) {
         <SideButton Icon={IconReturn} text="返回列表" onClick={handleReturn} />
       </aside>
 
-      <section className="flex-1 py-4 px-4">
+      <section className="flex-1 py-4 px-4 overflow-auto">
         {recordDetail.messageList.consultMessageList.map(item => (
           <Message
             isLeft={item.senderId === recordDetail.customer.id}
@@ -187,7 +191,7 @@ export default function RecordDetail(props) {
       </section>
 
       {recordDetail.messageList.sessionMessageList.length > 0 && (
-        <section className="flex-1 py-4 px-4 border-l">
+        <section className="flex-1 py-4 px-4 border-l overflow-auto">
           {recordDetail.messageList.sessionMessageList.map(item => (
             <Message
               isLeft={item.senderId === recordDetail.supervisor.id}

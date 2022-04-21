@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { emojiNameUrlMap } from '../../../utils';
-import { Input } from 'antd';
-import { IconEmoji } from '../../../icons';
+import { Input, message } from 'antd';
+import { IconEmoji, IconImage } from '../../../icons';
 
 const { TextArea } = Input;
 
 export default function MessageTextArea(props) {
-  const { onSendMessage, disabled } = props;
+  const { onSendMessage, disabled, type } = props;
 
   const [text, setText] = useState('');
   const [emojiBoxVisible, setEmojiBoxVisible] = useState(false);
@@ -38,6 +38,20 @@ export default function MessageTextArea(props) {
     setEmojiBoxVisible(false);
   };
 
+  const handleSendImage = e => {
+    if (e.target.files && e.target.files.length > 0) {
+      const image = e.target.files[0];
+      service.uploadImage(image).then(res => {
+        if (res.data.code !== 200) {
+          message.error('上传失败');
+        }
+        const url = res.data.data;
+        const text = `[${url}]`;
+        onSendMessage(text);
+      });
+    }
+  };
+
   useEffect(() => {
     window.addEventListener('click', clickOutsideEmojiBox);
     return () => {
@@ -48,7 +62,7 @@ export default function MessageTextArea(props) {
   return (
     <>
       <div
-        className="relative flex justify-start px-2 py-1 bg-gray-50 border-t"
+        className="relative flex gap-2 justify-start px-2 py-1 bg-gray-50 border-t"
         ref={emojiBoxRef}
       >
         <button
@@ -57,6 +71,18 @@ export default function MessageTextArea(props) {
           onClick={() => setEmojiBoxVisible(visible => !visible)}
         >
           <IconEmoji style={{ fontSize: 20 }} />
+        </button>
+        <button title="图片" className="text-gray-700 hover:text-gray-500">
+          <label className="cursor-pointer">
+            <IconImage style={{ fontSize: 20 }} />
+            <input
+              className="hidden"
+              type="file"
+              name={'select-image-' + type}
+              id={'select-image-' + type}
+              onChange={handleSendImage}
+            />
+          </label>
         </button>
         <div
           className="absolute bottom-7 left-0 p-2 grid-cols-10 gap-1 bg-gray-50 border shadow"

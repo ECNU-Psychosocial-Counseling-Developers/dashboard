@@ -27,7 +27,7 @@ function Home() {
   }
 
   useEffect(() => {
-    if (!user.role) {
+    if (!user.userId) {
       navigate('/login');
     }
   }, [user]);

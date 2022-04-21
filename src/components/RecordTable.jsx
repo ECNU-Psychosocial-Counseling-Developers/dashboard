@@ -11,10 +11,7 @@ export default function RecordTable(props) {
   });
 
   const handleShowDetail = record => {
-    console.log(record);
-    // const { consultId } = record;
-    // TODO: 使用 record 中的 consultId
-    const consultId = 17;
+    const { consultId } = record;
     setDetailStatus({ visible: true, consultId });
   };
 
@@ -71,8 +68,7 @@ export default function RecordTable(props) {
   return (
     <div>
       <Table
-        // TODO: 生产环境下不使用 random
-        rowKey={record => record.consumer + record.duration + Math.random()}
+        rowKey={record => record.consumer + record.duration}
         size="small"
         columns={tableColumns}
         pagination={false}

@@ -4,7 +4,7 @@ function MultiplyRadioGroup(props) {
   const {
     options,
     className,
-    uncheckedClassName,
+    unCheckedClassName,
     checkedClassName,
     onChange,
     initialValue,
@@ -35,7 +35,7 @@ function MultiplyRadioGroup(props) {
           className={
             activeValue.indexOf(option.value) >= 0
               ? checkedClassName
-              : uncheckedClassName
+              : unCheckedClassName
           }
         >
           <input
@@ -55,7 +55,7 @@ function SingleRadioGroup(props) {
   const {
     options,
     className,
-    uncheckedClassName,
+    unCheckedClassName,
     checkedClassName,
     onChange,
     name,
@@ -63,17 +63,10 @@ function SingleRadioGroup(props) {
 
   const [activeValue, setActiveValue] = useState('');
 
-  const handleChange = e => {
-    const checkedValue = e.target.value;
+  const handleChange = checkedValue => {
     setActiveValue(checkedValue);
     onChange(checkedValue);
   };
-
-  // className={
-  //   'block rounded cursor-pointer ' +
-  //   (activeValue === option.value
-  //     ? activeClassName || 'bg-blue-500'
-  //     : '')
 
   return (
     <div className={className}>
@@ -81,8 +74,9 @@ function SingleRadioGroup(props) {
         <label
           key={index}
           className={
-            activeValue === option.value ? checkedClassName : uncheckedClassName
+            activeValue === option.value ? checkedClassName : unCheckedClassName
           }
+          onClick={() => handleChange(option.value)}
         >
           {option.content}
           <input
@@ -90,7 +84,6 @@ function SingleRadioGroup(props) {
             type="radio"
             name={name ?? 'radio'}
             value={option.value}
-            onChange={handleChange}
           />
         </label>
       ))}
@@ -106,7 +99,7 @@ export default function RadioCardGroup(props) {
     name = '',
     onChange,
     options,
-    uncheckedClassName,
+    unCheckedClassName,
     initialValue,
   } = props;
 
@@ -115,7 +108,7 @@ export default function RadioCardGroup(props) {
       <MultiplyRadioGroup
         options={options}
         className={className}
-        uncheckedClassName={uncheckedClassName}
+        unCheckedClassName={unCheckedClassName}
         checkedClassName={checkedClassName}
         onChange={onChange}
         initialValue={initialValue}
@@ -128,7 +121,7 @@ export default function RadioCardGroup(props) {
       className={className}
       options={options}
       checkedClassName={checkedClassName}
-      uncheckedClassName={uncheckedClassName}
+      unCheckedClassName={unCheckedClassName}
       onChange={onChange}
     />
   );

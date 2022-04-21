@@ -67,7 +67,7 @@ export default function CreatePersonModal(props) {
                 content: '周' + weekNumberToCharacter[index + 1],
               }))}
               className="grid grid-cols-4 gap-2 select-none mb-8"
-              uncheckedClassName="flex items-center justify-center px-4 py-2 bg-gray-300 opacity-50 cursor-pointer"
+              unCheckedClassName="flex items-center justify-center px-4 py-2 bg-gray-300 opacity-50 cursor-pointer"
               checkedClassName="flex items-center justify-center px-4 py-2 bg-indigo-theme text-gray-50 cursor-pointer"
               multiply
               initialValue={currentDutyDay}

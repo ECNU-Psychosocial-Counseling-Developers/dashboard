@@ -69,7 +69,10 @@ function NavMenu({ user, navigate }) {
 }
 
 function ChatMenu({ navigate }) {
+  console.log('re render chat menu');
+
   const conversationList = useSelector(state => state.conversationList);
+  const user = useSelector(state => state.user);
   const userId = useParams();
   // interface ChatList {
   //   name: string;
@@ -78,37 +81,72 @@ function ChatMenu({ navigate }) {
   //   unreadCount: number;
   //   conversationID: string;
   // }
-  const [chatList, setChatList] = useState([]);
+  const [chatList, setChatListDebug] = useState([]);
+
+  const setChatList = (...args) => {
+    console.log('setChatList', ...args);
+    setChatListDebug(...args);
+  };
 
   useEffect(() => {
-    console.log({ conversationList });
-    const newChatList = conversationList.map(conversation => {
-      return {
-        userId: conversation.userProfile.userID,
-        unreadCount: conversation.unreadCount,
-        conversationID: conversation.conversationID,
-      };
-    });
-    console.log({ newChatList });
+    console.log('side bar get conversation list', { conversationList });
+    const expectedConversationID = localStorage.getItem(
+      localStorage.getItem('currentConversationID')
+    );
+    const newChatList = conversationList
+      .filter(
+        conversation => conversation.conversationID !== expectedConversationID
+      )
+      .map(conversation => {
+        return {
+          userId: conversation.userProfile.userID,
+          unreadCount: conversation.unreadCount,
+          conversationID: conversation.conversationID,
+        };
+      });
+    console.log({ newChatList }, newChatList.length);
     if (newChatList.length) {
-      // TODO: ajax 请求获取聊天人信息, unreadCount conversation 获取
-      // params: [userId1, userId2, ...]
-      // res: [{name, ...}, {name, ...}, {name, ...}]
-
-      const params = newChatList.map(item => item.userId);
-      const res = Array.from({ length: newChatList.length }, (_, index) => ({
+      // default chat person list
+      let res = Array.from({ length: newChatList.length }, (_, index) => ({
         name: newChatList[index].userId,
         avatarUrl: 'https://placekitten.com/g/100/100',
       }));
-      Promise.resolve(res).then(res => {
-        setChatList(() => {
-          return newChatList.map((item, index) => ({
-            ...item,
-            name: res[index].name,
-            avatarUrl: res[index].avatarUrl,
+      if (user.role === Role.counselor) {
+        Promise.all(
+          newChatList.map(item => service.getCustomerInfo(item.userId))
+        ).then(resArr => {
+          console.log('resArr', { resArr });
+          res = resArr.map(item => ({
+            ...item.data.data,
+            photo: item.data.data?.photo || 'https://placekitten.com/g/100/100',
           }));
+          console.log('res', res);
+          setChatList(() => {
+            return newChatList.map((item, index) => ({
+              ...item,
+              name: res[index].name,
+              avatarUrl: res[index].photo,
+            }));
+          });
         });
-      });
+      } else if (user.role === Role.supervisor) {
+        Promise.all(
+          newChatList.map(item => service.getCounselorInfo(item.userId))
+        ).then(resArr => {
+          console.log('resArr', { resArr });
+          res = resArr.map(item => ({
+            ...item.data.data,
+            photo: item.data.data.photo || 'https://placekitten.com/g/100/100',
+          }));
+          setChatList(() => {
+            return newChatList.map((item, index) => ({
+              ...item,
+              name: res[index].name,
+              avatarUrl: res[index].photo,
+            }));
+          });
+        });
+      }
     }
   }, [conversationList]);
 
@@ -128,7 +166,7 @@ function ChatMenu({ navigate }) {
       newList.unshift({ ...clickItem, unreadCount: 0 });
 
       setMessageRead({ conversationID: clickItem.conversationID });
-      sessionStorage.setItem('currentConversationID', clickItem.conversationID);
+      localStorage.setItem('currentConversationID', clickItem.conversationID);
       return newList;
     });
 
@@ -149,19 +187,15 @@ function ChatMenu({ navigate }) {
     }
   };
 
+  console.log('render chat info', chatList);
+
   return (
     <div>
-      {/* TODO: navigate 去除 */}
-      <p
-        className="px-6 py-4 text-xs"
-        onClick={() => navigate('conversation/lcy666')}
-      >
-        会话列表
-      </p>
+      <p className="px-6 py-4 text-xs">会话列表</p>
       <ul>
         {chatList.map((chatItem, index) => {
           return (
-            <li className="relative flex items-center" key={index}>
+            <li className="relative flex items-center group" key={index}>
               <button
                 className="flex justify-between items-center w-full pl-6 pr-10 py-3 hover:bg-gray-700"
                 onClick={() => jumpToConversation(chatItem.userId)}
@@ -177,7 +211,7 @@ function ChatMenu({ navigate }) {
                 )}
               </button>
               <button
-                className="absolute right-2 flex justify-center items-center w-4 h-4 rounded-full opacity-0 hover:bg-gray-50 hover:opacity-70 hover:text-gray-900"
+                className="absolute right-2 flex justify-center items-center w-4 h-4 rounded-full opacity-0 group-hover:bg-gray-50 group-hover:opacity-70 group-hover:text-gray-900"
                 onClick={() =>
                   handleDeleteConversation(chatItem.conversationID)
                 }
@@ -286,7 +320,7 @@ function SideBar() {
         <label htmlFor="avatar-upload" className={'cursor-pointer'}>
           <Avatar
             size={64}
-            src={user.avatarUrl || 'https://placekitten.com/g/300/300'}
+            src={user.avatarUrl || 'https://placekitten.com/g/100/100'}
           />
         </label>
         <p className="text-gray-50">欢迎，{user.name ?? '管理员'}</p>

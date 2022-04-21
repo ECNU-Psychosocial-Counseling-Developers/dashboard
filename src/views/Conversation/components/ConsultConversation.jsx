@@ -5,6 +5,7 @@ import ChatBubble from './ChatBubbles';
 import MessageTextArea from './MessageTextArea';
 import { createMessage, sendMessage, getMessageList } from '../../../im';
 import { useParams } from 'react-router-dom';
+import service from '../../../service';
 
 export default function ConsultConversation(props) {
   const {
@@ -17,8 +18,7 @@ export default function ConsultConversation(props) {
     setMessages,
     nextReqMessageID,
     setNextReqMessageID,
-    // consultId 用以存储消息
-    // consultId =
+    type = 'consult',
   } = props;
 
   const user = useSelector(state => state.user);
@@ -40,16 +40,46 @@ export default function ConsultConversation(props) {
   };
 
   const handleSendMessage = (text, setText) => {
+    console.log('in consult conversation', text);
+
     if (!text.trim().length) {
       return;
     }
-    // const targetUserID = user.userId === '01' ? '02' : '01';
-    // TODO: 需要得知咨询 id - post /msg/save
+
+    const consultId =
+      type === 'consult'
+        ? Number(localStorage.getItem('message_consultId'))
+        : Number(localStorage.getItem('message_sessionId'));
+
+    console.log(
+      'save message ' +
+        JSON.stringify({
+          consultId,
+          consultType: 0,
+          senderId: Number(user.userId),
+          receiverId: Number(targetUserId),
+          sendTime: Date.now(),
+          message: text,
+        })
+    );
+
+    service.appendMessage({
+      consultId,
+      consultType: 0,
+      senderId: Number(user.userId),
+      receiverId: Number(targetUserId),
+      sendTime: Date.now(),
+      message: text,
+    });
+
+    // 咨询师与顾客对话，督导与咨询师对话，都仅需接收 custom data，无需发送
     const newMessage = createMessage(targetUserId, text);
     sendMessage(newMessage);
     flushSync(() => {
       setMessages(preMessages => [...preMessages, newMessage]);
-      setText('');
+      if (setText) {
+        setText('');
+      }
     });
     conversationRef.current.lastChild.scrollIntoView({
       behavior: 'smooth',
@@ -80,7 +110,7 @@ export default function ConsultConversation(props) {
             <ChatBubble
               key={index}
               text={message.payload.text}
-              avatarUrl={isLeft ? chatPersonInfo?.avatarUrl : user.avatarUrl}
+              avatarUrl={isLeft ? chatPersonInfo?.photo : user.avatarUrl}
               isLeft={isLeft}
             />
           );
@@ -88,7 +118,11 @@ export default function ConsultConversation(props) {
       </div>
 
       {/* 信息输入框 */}
-      <MessageTextArea onSendMessage={handleSendMessage} disabled={isOver} />
+      <MessageTextArea
+        onSendMessage={handleSendMessage}
+        disabled={isOver}
+        type="consult"
+      />
     </div>
   );
 }

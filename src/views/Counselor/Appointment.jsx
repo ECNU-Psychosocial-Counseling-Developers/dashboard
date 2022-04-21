@@ -98,7 +98,7 @@ export default function Appointment() {
           return;
         }
         setTableData(
-          res.data.data.arrangementList.map(item => ({
+          res.data.data.appointmentList.map(item => ({
             id: item.id,
             customerName: item.customerName,
             date: dayjs(item.startTime).format('YYYY-MM-DD'),

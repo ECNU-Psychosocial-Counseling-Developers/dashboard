@@ -18,10 +18,9 @@ export default function SelectSupervisorModal(props) {
   useEffect(() => {
     if (visible) {
       service.getOnlineSupervisor().then(res => {
-        // TODO: photo url replace
         const supervisorList = res.data.data.counselorList.map(info => ({
           ...info,
-          photo: 'https://placekitten.com/g/50/50',
+          photo: info.photo || 'https://placekitten.com/g/50/50',
         }));
         setSupervisorInfoList(supervisorList);
       });
@@ -42,7 +41,7 @@ export default function SelectSupervisorModal(props) {
           options={supervisorInfoList.map(info => ({
             value: info.id,
             content: (
-              <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded border">
+              <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded border transparent">
                 <Avatar src={info.photo} />
                 <p>{info.name}</p>
               </div>

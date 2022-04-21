@@ -33,14 +33,24 @@ function logout() {
   return tim.logout();
 }
 
-function createMessage(userID, text) {
+function createMessage(userID, text, cloudCustomData) {
   return tim.createTextMessage({
     to: userID,
     conversationType: TIM.TYPES.CONV_C2C,
     payload: {
       text,
     },
-    cloudCustomData: 'banqinghe says hello',
+    cloudCustomData,
+  });
+}
+
+function createCustomMessage(userID, payload) {
+  return tim.createTextMessage({
+    to: userID,
+    conversationType: TIM.TYPES.CONV_C2C,
+    payload: {
+      data: payload,
+    },
   });
 }
 
@@ -90,6 +100,7 @@ export {
   AppID,
   AppKey,
   createMessage,
+  createCustomMessage,
   deleteConversation,
   getConversationList,
   getMessageList,

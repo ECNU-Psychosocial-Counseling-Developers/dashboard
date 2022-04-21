@@ -8,3 +8,4 @@ export { default as IconShakeHand } from './IconShakeHand';
 export { default as IconCalendarEdit } from './IconCalendarEdit';
 export { default as IconAppointment } from './IconAppointment';
 export { default as IconReturn } from './IconReturn';
+export { default as IconImage } from './IconImage';

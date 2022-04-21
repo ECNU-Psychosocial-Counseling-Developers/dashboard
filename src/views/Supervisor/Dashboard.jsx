@@ -69,8 +69,6 @@ export default function Dashboard() {
       .getOnDutyCounselor(dayjs().day() === 0 ? 7 : dayjs().day())
       .then(res => {
         setOnlineCounselorList(res.data.data.counselorList);
-        // TODO: 为了展示效果加了一些数据
-        // setOnlineCounselorList(new Array(20).fill(res.data.data[0]));
       });
     Promise.all([
       service.getTodayConsultStat(user.userId),

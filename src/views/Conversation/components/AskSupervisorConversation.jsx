@@ -2,7 +2,9 @@ import { flushSync } from 'react-dom';
 import { Avatar } from 'antd';
 import ChatBubble from './ChatBubbles';
 import MessageTextArea from './MessageTextArea';
-import { getMessageList } from '../../../im';
+import { createMessage, sendMessage, getMessageList } from '../../../im';
+import { useSelector } from 'react-redux';
+import service from '../../../service';
 
 export default function AskSupervisorConversation(props) {
   const {
@@ -18,16 +20,20 @@ export default function AskSupervisorConversation(props) {
     onFinish,
   } = props;
 
+  const user = useSelector(state => state.user);
+
   const getMoreMessages = () => {
     if (!conversationID) {
       return;
     }
+    console.log('get more message', nextReqMessageID);
     getMessageList({
       conversationID,
       nextReqMessageID,
     }).then(res => {
       const messageList = res.data.messageList;
 
+      console.log(nextReqMessageID, res.data.nextReqMessageID);
       setNextReqMessageID(
         res.data.isCompleted ? '' : res.data.nextReqMessageID
       );
@@ -39,24 +45,45 @@ export default function AskSupervisorConversation(props) {
     if (!text.trim().length) {
       return;
     }
-    // const targetUserID = user.userId === '01' ? '02' : '01';
-    // const newMessage = createMessage(targetUserID, text);
-    // sendMessage(newMessage).then(e => session.setItem('supervisor_' + clientConversationID, e.data.message.conversationID));
-    // flushSync(() => {
-    //   setMessages(preMessages => [...preMessages, newMessage]);
-    //   setText('');
-    // });
-    console.log('send message', text);
-    // conversationRef.current.lastChild.scrollIntoView({
-    //   behavior: 'smooth',
-    // });
+    const targetUserId = askStatus.supervisorInfo.id.toString();
+
+    const newMessage = createMessage(
+      targetUserId,
+      text,
+      JSON.stringify({
+        consultId: localStorage.getItem('message_consultId'),
+        sessionId: localStorage.getItem('message_sessionId'),
+      })
+    );
+    sendMessage(newMessage);
+
+    console.log('send message to supervisor', targetUserId, text);
+    // 将发出的消息存储在服务端;
+    service.appendMessage({
+      consultId: Number(localStorage.getItem('message_sessionId')),
+      consultType: 1,
+      senderId: user.userId,
+      receiverId: Number(askStatus.supervisorInfo.id),
+      sendTime: Date.now(),
+      message: text,
+    });
+
+    flushSync(() => {
+      setMessages(preMessages => [...preMessages, newMessage]);
+      if (setText) {
+        setText('');
+      }
+    });
+    conversationRef.current.lastChild.scrollIntoView({
+      behavior: 'smooth',
+    });
   };
 
   return (
     <div className={'flex flex-col border-l' + ' ' + className}>
       <div className="flex  items-center justify-between px-6 py-4 bg-indigo-theme opacity-90">
         <div className="flex items-center gap-5">
-          <Avatar src={askStatus.supervisorInfo.avatarUrl} size={50} />
+          <Avatar src={askStatus.supervisorInfo.photo} size={50} />
           <div>
             <h2 className="text-gray-50 text-xs mb-0.5 opacity-80">求助督导</h2>
             <p className="text-gray-50 text-lg">
@@ -87,7 +114,7 @@ export default function AskSupervisorConversation(props) {
               key={index}
               text={message.payload.text}
               avatarUrl={
-                isLeft ? askStatus.supervisorInfo.avatarUrl : user.avatarUrl
+                isLeft ? askStatus.supervisorInfo.photo : user.avatarUrl
               }
               isLeft={isLeft}
             />
@@ -95,7 +122,11 @@ export default function AskSupervisorConversation(props) {
         })}
       </div>
 
-      <MessageTextArea onSendMessage={handleSendMessage} disabled={isOver} />
+      <MessageTextArea
+        onSendMessage={handleSendMessage}
+        disabled={isOver}
+        type="session"
+      />
     </div>
   );
 }

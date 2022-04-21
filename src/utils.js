@@ -142,7 +142,7 @@ function consultResponseToTableRow(res) {
 function allConsultResponseToTableRow(res) {
   return res.data.data.consultVOList.map(item => {
     const {
-      counselId,
+      id,
       startTime,
       supervisorName,
       endTime,
@@ -151,6 +151,7 @@ function allConsultResponseToTableRow(res) {
       counselName,
     } = item;
     return {
+      consultId: id,
       consumer: counselName,
       supervisor: supervisorName,
       duration: Math.floor((endTime - startTime) / 1000),

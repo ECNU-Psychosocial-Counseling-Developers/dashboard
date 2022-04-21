@@ -180,6 +180,9 @@ export default function Dashboard() {
     weekConsultChart.current.setOption(weekChartInitOption);
 
     service.getTodayAllConsultStat().then(res => {
+      if (res.data.code !== 200) {
+        return;
+      }
       const { consultCnt, totalTime, consultHourCountList } = res.data.data;
       setTodayConsultState({
         consultCnt,
@@ -222,9 +225,11 @@ export default function Dashboard() {
       });
 
     service.getCounselorMonthCountRank().then(res => {
+      console.log('count rank', res.data.data.consultCountRankVOList);
       setCounselorCountRank(res.data.data.consultCountRankVOList);
     });
     service.getCounselorMonthScoreRank().then(res => {
+      console.log('score rank', res.data.data.consultScoreRankVOList);
       setCounselorScoreRank(res.data.data.consultScoreRankVOList);
     });
     service
@@ -329,11 +334,14 @@ export default function Dashboard() {
           {counselorCountRank.length > 0 ? (
             <div className="space-y-1">
               {counselorCountRank.map(
-                ({ counselorId, counselorName, consultCount }, index) => (
+                (
+                  { counselorId, counselorName, consultCount, photo },
+                  index
+                ) => (
                   <ConsultOrderItem
                     key={counselorId}
                     order={index + 1}
-                    avatarUrl="https://placekitten.com/35/35"
+                    avatarUrl={photo}
                     name={counselorName}
                     text={consultCount}
                   />
@@ -349,11 +357,11 @@ export default function Dashboard() {
           {counselorScoreRank.length > 0 ? (
             <div className="space-y-1">
               {counselorScoreRank.map(
-                ({ counselorId, counselorName, avgScore }, index) => (
+                ({ counselorId, counselorName, avgScore, photo }, index) => (
                   <ConsultOrderItem
                     key={counselorId}
                     order={index + 1}
-                    avatarUrl="https://placekitten.com/35/35"
+                    avatarUrl={photo}
                     name={counselorName}
                     text={
                       <div className="space-x-2">
