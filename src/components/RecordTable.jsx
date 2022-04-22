@@ -76,7 +76,11 @@ export default function RecordTable(props) {
       />
 
       {/* 详情页 */}
-      <RecordDetail status={detailStatus} handleReturn={handleReturn} />
+      <RecordDetail
+        status={detailStatus}
+        handleReturn={handleReturn}
+        type={props.type}
+      />
     </div>
   );
 }

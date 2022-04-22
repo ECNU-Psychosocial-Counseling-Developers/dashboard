@@ -4,7 +4,9 @@ import { IconExport, IconReturn } from '../icons';
 import dayjs from 'dayjs';
 import ChatBubble from '../views/Conversation/components/ChatBubbles';
 import { useEffect } from 'react';
-import { duration } from '../utils';
+import { duration, saveFileToFileSystem } from '../utils';
+import { useSelector } from 'react-redux';
+import { Role } from '../enum';
 
 export const initialRecordDetail = {
   duration: 0,
@@ -67,14 +69,16 @@ function Message({ isLeft, text, sendTime, leftAvatarUrl, rightAvatarUrl }) {
 }
 
 export default function RecordDetail(props) {
-  const { status, handleReturn } = props;
+  const { status, handleReturn, type } = props;
   const { visible, consultId } = status;
+  const user = useSelector(state => state.user);
 
   console.log('status', { status });
 
   const [recordDetail, setRecordDetail] = useState(initialRecordDetail);
 
   const handleExportRecord = messageList => {
+    console.log('export record');
     saveFileToFileSystem(JSON.stringify(messageList), '咨询记录');
   };
 
@@ -84,7 +88,10 @@ export default function RecordDetail(props) {
     }
     Promise.all([
       service.getConsultInfo(consultId),
-      service.getConsultMessage(consultId),
+
+      type === 'session'
+        ? service.getConsultMessage(null, consultId)
+        : service.getConsultMessage(consultId),
     ])
       .then(([infoRes, messageRes]) => {
         if (infoRes.data.code !== 200 || messageRes.data.code !== 200) {
@@ -142,6 +149,8 @@ export default function RecordDetail(props) {
       });
   }, [visible]);
 
+  console.log('show detail', recordDetail.messageList);
+
   return (
     <div
       className="absolute top-0 left-0 right-0 bottom-0 bg-white"
@@ -194,7 +203,10 @@ export default function RecordDetail(props) {
         <section className="flex-1 py-4 px-4 border-l overflow-auto">
           {recordDetail.messageList.sessionMessageList.map(item => (
             <Message
-              isLeft={item.senderId === recordDetail.supervisor.id}
+              isLeft={
+                item.senderId.toString() ===
+                recordDetail.supervisor.id.toString()
+              }
               text={item.message}
               leftAvatarUrl={recordDetail.supervisor.avatarUrl}
               rightAvatarUrl={recordDetail.counselor.avatarUrl}

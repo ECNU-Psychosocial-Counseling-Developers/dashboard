@@ -1,5 +1,6 @@
 import { logout } from '../im';
 import { Role } from '../enum';
+import service from '../service';
 
 const defaultState = {
   user: localStorage.getItem('userInfo')

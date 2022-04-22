@@ -34,6 +34,13 @@ service.login = (username, password) => {
 };
 
 /**
+ * 用户登出
+ */
+service.logout = userId => {
+  return axios.post('/user/logout/' + userId);
+};
+
+/**
  * 获取咨询师信息
  */
 service.getCounselorInfo = counselorId => {
@@ -345,11 +352,15 @@ service.appendMessage = payload => {
 /**
  * 获取消息
  */
-service.getConsultMessage = consultId => {
+service.getConsultMessage = (consultId, sessionId) => {
+  const params = {};
+  if (sessionId) {
+    params.sessionId = sessionId;
+  } else {
+    params.consultId = consultId;
+  }
   return axios.get('/msg/record/query', {
-    params: {
-      consultId,
-    },
+    params,
   });
 };
 

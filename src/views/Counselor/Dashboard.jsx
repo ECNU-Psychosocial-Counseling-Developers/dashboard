@@ -7,6 +7,7 @@ import photoUrl from '../../assets/photo.webp';
 import RecordTable from '../../components/RecordTable';
 import service from '../../service';
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   consultResponseToTableRow,
   arrangementResponseToDutyList,
@@ -27,6 +28,7 @@ function ConsultInfo(props) {
 
 function Dashboard() {
   const user = useSelector(state => state.user);
+  const navigate = useNavigate();
 
   const [overallStatistics, setOverallStatistics] = useState({
     avgScore: 0,
@@ -141,7 +143,12 @@ function Dashboard() {
       <div className="bg-white">
         <div className="flex justify-between px-4 py-3 text-sm">
           <div>最近完成的咨询</div>
-          <button className="text-green-500">查看全部 &gt;</button>
+          <button
+            className="text-green-500"
+            onClick={() => navigate('/record')}
+          >
+            查看全部 &gt;
+          </button>
         </div>
         <RecordTable dataSource={tableData} />
       </div>

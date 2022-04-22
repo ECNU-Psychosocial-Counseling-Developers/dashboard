@@ -76,12 +76,6 @@ export default function AskRecord() {
             </Form.Item>
           </div>
         </Form>
-        <button
-          className="px-3 py-1 bg-green-theme text-gray-50 rounded-sm"
-          onClick={handleBatchExportRecord}
-        >
-          批量导出求助记录
-        </button>
       </div>
       <RecordTable
         className="mt-4 bg-white"
@@ -94,6 +88,7 @@ export default function AskRecord() {
           onChange: handlePageNumberChange,
         }}
         dataSource={tableData}
+        type="session"
       />
     </div>
   );

@@ -132,7 +132,13 @@ export default function Calendar() {
   };
 
   const updateSidebar = () => {
-    const dutyDay = dayjs(activeDate).day() === 0 ? 7 : dayjs().day();
+    console.log(
+      'active date',
+      activeDate,
+      dayjs().date(activeDate).day() === 0 ? 7 : dayjs().date(activeDate).day()
+    );
+    const dutyDay =
+      dayjs().date(activeDate).day() === 0 ? 7 : dayjs().date(activeDate).day();
     Promise.all([
       service.getOnDutyCounselor(dutyDay),
       service.getOnDutySupervisor(dutyDay),

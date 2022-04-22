@@ -3,7 +3,8 @@ import { Popover, Modal, Form, Input, message } from 'antd';
 import IconLogout from '../icons/IconLogout';
 import logoUrl from '../assets/logo.svg';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import service from '../service';
 
 function Header() {
   const navigate = useNavigate();
@@ -14,8 +15,11 @@ function Header() {
 
   const [passwordVisible, setPasswordVisible] = useState(false);
 
+  const user = useSelector(state => state.user);
+
   const handleLogout = () => {
     dispatch({ type: 'user/logout' });
+    service.logout(user.userId);
     navigate('/login');
   };
 

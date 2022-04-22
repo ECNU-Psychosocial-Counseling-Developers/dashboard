@@ -382,13 +382,6 @@ export default function Conversation() {
                   {duration(Math.floor(consultStatus.duration / 1000))}
                 </p>
               </div>
-              <div>
-                <p>咨询者评价</p>
-                <Rate disabled defaultValue={3} />
-                <p className="text-xs mt-3 line-clamp-5">
-                  {consultStatus.comment}
-                </p>
-              </div>
             </>
           ) : (
             <>

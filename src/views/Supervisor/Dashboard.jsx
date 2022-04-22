@@ -176,7 +176,7 @@ export default function Dashboard() {
             查看全部 &gt;
           </button>
         </div>
-        <RecordTable dataSource={tableData} />
+        <RecordTable dataSource={tableData} type="session" />
       </div>
     </div>
   );

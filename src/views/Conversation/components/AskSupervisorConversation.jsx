@@ -62,7 +62,7 @@ export default function AskSupervisorConversation(props) {
     service.appendMessage({
       consultId: Number(localStorage.getItem('message_sessionId')),
       consultType: 1,
-      senderId: user.userId,
+      senderId: Number(user.userId),
       receiverId: Number(askStatus.supervisorInfo.id),
       sendTime: Date.now(),
       message: text,
